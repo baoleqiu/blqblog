@@ -21,7 +21,7 @@ export const coverImageConfig: CoverImageConfig = {
 
 	randomCoverImage: {
 		// 随机封面图功能开关
-		enable: false,
+		enable: true,
 		// 封面图API列表
 		apis: [
 			"https://t.alcy.cc/pc",
@@ -29,7 +29,7 @@ export const coverImageConfig: CoverImageConfig = {
 			"https://uapis.cn/api/v1/random/image?category=acg&type=pc",
 		],
 		// API失败时的回退图片路径（相对于src目录或以/开头的public目录路径）
-		fallback: "assets/images/cover.avif",
+		fallback: "assets/images/DesktopWallpaper/violet.jpg",
 		// 是否显示加载动画
 		showLoading: false,
 	},
