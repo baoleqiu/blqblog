@@ -2,13 +2,13 @@ import type { BackgroundWallpaperConfig } from "@/types/backgroundWallpaper";
 
 export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	// 壁纸模式："banner" 横幅壁纸，"fullscreen" 全屏壁纸，"overlay" 全屏透明，"none" 纯色背景无壁纸
-	mode: "fullscreen", // "banner" | "fullscreen" | "overlay" | "none"
+	mode: "banner", // "banner" | "fullscreen" | "overlay" | "none"
 	// 是否允许用户通过导航栏切换壁纸模式
 	// 且同时维护多种壁纸模式过于复杂（已经屎山代码），在切换时有时候可能会出现一些奇怪的过渡效果或者bug
 	// 推荐只选择自己喜欢的模式并关闭切换功能
 	switchable: true,
 	// 是否启用背景视频播放，配置后将在导航栏显示视频播放按钮
-	playerEnable: true,
+	playerEnable: false,
 	/**
 	 * 背景图片配置
 	 * 图片路径支持三种格式：
@@ -45,16 +45,13 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		desktop: "assets/images/DesktopWallpaper/violet.jpg",
 		// 移动背景图片（支持单张或多张随机）
 		// mobile: "assets/images/MobileWallpaper/m1.avif",
-		mobile: [
-			"assets/images/MobileWallpaper/violet.jpg",
-					],
-		// 背景视频播放地址
+		mobile: "assets/images/MobileWallpaper/violet.jpg",
 		// 支持单个视频路径（字符串）或多个视频循环（数组）
 		// 支持远程视频URL，本地视频请放在 public/assets/videos/ 目录下
 		// playerUrl: "/assets/videos/firefly.mp4",
-		playerUrl: [
-			"https://www.image2url.com/r2/default/videos/1781765166391-f2ba6648-1597-40e0-9f0a-6768ae39e574.mp4",
-		],
+		//playerUrl: [
+		//	"https://www.image2url.com/r2/default/videos/1781765166391-f2ba6648-1597-40e0-9f0a-6768ae39e574.mp4",
+		//],
 	},
 	// 横幅壁纸和全屏壁纸共享配置
 	common: {
@@ -67,27 +64,23 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			// 是否启用主页横幅文字
 			enable: true,
 			// 是否允许用户通过控制面板切换横幅标题显示
-			switchable: true,
+			switchable: false,
 			// 主页横幅主标题
-			title: "Lovely firefly!",
+			title: "玻璃球的个人博客",
 			// 主页横幅主标题字体大小
-			titleSize: "3.8rem",
+			titleSize: "3rem",
 			// 主页横幅副标题
 			subtitle: [
-				"In Reddened Chrysalis, I Once Rest",
-				"From Shattered Sky, I Free Fall",
-				"Amidst Silenced Stars, I Deep Sleep",
-				"Upon Lighted Fyrefly, I Soon Gaze",
-				"From Undreamt Night, I Thence Shine",
-				"In Finalized Morrow, I Full Bloom",
+				"突然有风吹过",
+				
 			],
 			// 主页横幅副标题字体大小
-			subtitleSize: "1.5rem",
+			subtitleSize: "1.8rem",
 			typewriter: {
 				// 是否启用打字机效果
 				// 打字机开启 → 循环显示所有副标题
 				// 打字机关闭 → 每次刷新随机显示一条副标题
-				enable: true,
+				enable: false,
 				// 打字速度（毫秒）
 				speed: 100,
 				// 删除速度（毫秒）
@@ -109,25 +102,25 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		waves: {
 			enable: {
 				// 桌面端是否启用水波纹动画效果
-				desktop: true,
+				desktop: false,
 				// 移动端是否启用水波纹动画效果
-				mobile: true,
+				mobile: false,
 			},
 			// 是否允许用户通过控制面板切换水波纹动画
-			switchable: true,
+			switchable: false,
 		},
 		// 渐变过渡效果配置，当水波纹关闭时自动启用，提供壁纸底部到背景色的平滑过渡
 		gradient: {
 			enable: {
 				// 桌面端是否启用渐变过渡
-				desktop: true,
+				desktop: false,
 				// 移动端是否启用渐变过渡
-				mobile: true,
+				mobile: false,
 			},
 			// 渐变高度
 			height: "15vh",
 			// 是否允许用户通过控制面板切换渐变过渡
-			switchable: true,
+			switchable: false,
 		},
 	},
 	// Banner模式特有配置

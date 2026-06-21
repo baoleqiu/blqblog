@@ -11,7 +11,7 @@ export const fontConfig: FontConfig = {
 
 	// 各区域独立字体设置（填写下方 fonts 中的字体 ID，留空则使用全局 selected 字体）
 	// 横幅标题字体
-	bannerTitleFont: "zen-maru-gothic",
+	bannerTitleFont: "inter",
 	// 横幅副标题字体
 	bannerSubtitleFont: "inter",
 	// 导航栏标题字体
