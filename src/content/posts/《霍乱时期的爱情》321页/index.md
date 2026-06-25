@@ -1,8 +1,8 @@
 ---
 title: 《霍乱时期的爱情》
-published: 2024-01-18
+published: 2023-08-19
 description: "南海出版公司2012版，321页"
-image: ./phtots/321页.jpg
+image: ./photos/321页.jpg
 tags: [霍乱时期的爱情]
 category: 读书
 ---

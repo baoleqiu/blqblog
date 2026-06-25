@@ -12,7 +12,7 @@ export const profileConfig: ProfileConfig = {
 	name: "玻璃球",
 
 	// 个人签名
-	bio: "欢迎访问我的博客",
+	bio: "再看天地辽阔",
 
 	// 链接配置
 	// 已经预装的图标集：fa7-brands，fa7-regular，fa7-solid，material-symbols，simple-icons

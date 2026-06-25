@@ -71,7 +71,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			titleSize: "3rem",
 			// 主页横幅副标题
 			subtitle: [
-				"突然有风吹过",
+				"总要有一首我的歌大声唱过 再看天地辽阔",
 				
 			],
 			// 主页横幅副标题字体大小

@@ -50,9 +50,9 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	local: {
 		playlist: [
 			{
-				name: "Overture-找自己 (Live)",
+				name: "二十二 (Live)",
 				artist: "陶喆",
-				url: "/assets/music/Soul Power Live 陶喆现场原音专辑/陶喆 - Overture-找自己 (Live).mp3",
+				url: "/assets/music/Soul Power Live 陶喆现场原音专辑/陶喆 - 二十二 (Live).mp3",
 				cover: "/assets/music/cover/Soul Power Live 陶喆现场原音专辑.jpg",
 				lrc: "",
 			},
