@@ -2,6 +2,7 @@
 title: 和玻璃球的杭州之旅
 published: 2026-06-27
 description: "宝宝的游记"
+image: ./photos/西湖划船最喜欢的侧脸.jpg
 tags: [杭州, 旅行, 对象]
 category: 旅行
 ---
