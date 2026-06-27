@@ -2,8 +2,8 @@
 title: 2026.6.11-6.13 记杭州
 published: 2026-06-26
 description: ""
-image: ./photos/正脸.png
-tags: [杭州, 旅行, 女朋友]
+image: ./photos/正脸2.png
+tags: [杭州, 旅行, 对象]
 category: 旅行
 ---
 
