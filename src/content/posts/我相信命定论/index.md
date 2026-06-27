@@ -4,6 +4,7 @@ published: 2024-01-18
 description: "我们的生命是有限的，我们做任何事都会被冠以限度这一概念，而时间与世界是无限的，我们无法拥有无限的时间与世界，但有限的我希望并不断追求着无限。"
 tags: [命运]
 category: 在想什么
+draft: true
 ---
 <span style="font-size:18px">
 我认为人这一个体是有限的 ，不确定的。

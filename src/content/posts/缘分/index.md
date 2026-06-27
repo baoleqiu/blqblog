@@ -5,6 +5,7 @@ description: "我认为人与人之间是存在缘分这一说法的，区别是
 image: ./photos/缘分.jpg
 tags: [缘分]
 category: 在想什么
+draft: true
 ---
 
 
