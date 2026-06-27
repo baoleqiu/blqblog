@@ -69,7 +69,7 @@ category: 旅行
 <div style="width: 60%; margin: 0 auto;">
 
 ![卷发](./photos/卷发.png)
-![今天的穿搭](./photos/今天的穿搭.JPG)
+![今天的穿搭](./photos/今天的穿搭.jpg)
 </div>
 
 <span style="color: #2d8c6c; font-size: 1.1em;">西湖湖面上很凉快，坐船时伸手就可以碰到水面，水是碧绿色的。</span>
