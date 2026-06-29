@@ -10,7 +10,7 @@
   }
 
   h1 {
-    @apply text-3xl;
+    @apply text-[26px];
   }
 
   h1,
