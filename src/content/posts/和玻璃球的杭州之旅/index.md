@@ -5,6 +5,8 @@ description: "宝宝的游记"
 image: ./photos/西湖划船最喜欢的侧脸.jpg
 tags: [杭州, 旅行, 对象]
 category: 旅行
+password: "521819"
+passwordHint: "🎂"
 ---
 
 # ✨ 我想先讲出行之前我内心有过的想法。
