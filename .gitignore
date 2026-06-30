@@ -36,4 +36,7 @@ Firefly-docs/
 
 cache/
 package/
+# Obsidian
 .obsidian/
+
+.claudian/
