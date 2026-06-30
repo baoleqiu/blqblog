@@ -39,7 +39,6 @@ import { remarkImageGrid } from "./src/plugins/remark-image-grid.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkPlantuml } from "./src/plugins/remark-plantuml.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
-import { remarkWikilink } from "./src/plugins/remark-wikilink.mjs";
 
 if (process.env.NODE_ENV === "development") {
 	setMaxListeners(20);
@@ -207,7 +206,6 @@ export default defineConfig({
 	markdown: {
 		processor: unified({
 			remarkPlugins: [
-					remarkWikilink,
 				...(siteConfig.post.rehypeCallouts.enablePythonMarkdownAdmonitions !== false
 					? [remarkAdmonitionToBlockquoteCallout]
 					: []),
