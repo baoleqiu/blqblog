@@ -95,7 +95,7 @@ export async function convertNote(snapshot) {
 	let converted = body;
 	for (const edit of edits.sort((a, b) => b.start - a.start)) converted = converted.slice(0, edit.start) + edit.text + converted.slice(edit.end);
 	const fields = { title: metadata.title, published: metadata.published, description: metadata.description || "", category: metadata.category || "", tags: metadata.tags || [], image, draft: false };
-	const markdown = `---\n${Object.entries(fields).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join("\n")}\n---\n${converted}`;
+	const markdown = `---\n${Object.entries(fields).map(([key, value]) => `${key}: ${key === "published" ? (/^\d{4}-\d{2}-\d{2}$/.test(value) && !issues.some(i=>i.code==="metadata") ? value : model.today()) : JSON.stringify(value)}`).join("\n")}\n---\n${converted}`;
 	files[`src/content/posts/obsidian/${snapshot.id}/index.md`] = markdown;
 	const contentFingerprint = hash(JSON.stringify({ rules: 1, markdown, assets: assets.map(a => a.hash).sort(), issues }));
 	return { id: snapshot.id, articleUrl: `/posts/obsidian/${snapshot.id}/`, markdown, metadata, assets, issues, contentFingerprint, fingerprint: contentFingerprint, files };

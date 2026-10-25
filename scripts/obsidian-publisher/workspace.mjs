@@ -4,7 +4,7 @@ import { assertInside, hash, writeAtomic } from "./common.mjs";
 
 const digestCache = new Map();
 const roots = new Set(["src", "public", "scripts", "patches"]);
-const rootFile = /^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.npmrc|astro\.config\..+|tsconfig.*\.json|svelte\.config\..+|tailwind\.config\..+|postcss\.config\..+)$/;
+const rootFile = /^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|pagefind\.yml|vercel\.json|wrangler\.jsonc|\.npmrc|astro\.config\..+|tsconfig.*\.json|svelte\.config\..+|tailwind\.config\..+|postcss\.config\..+)$/;
 export async function sourceFiles(repoRoot) {
 	const result = [];
 	async function walk(directory, prefix) {

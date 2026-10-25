@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { parseFrontmatter } from "@astrojs/markdown-remark";
 import { temporary, fixtureImage, note } from "./fixtures.mjs";
 let converter = {};
 try { converter = await import("../../scripts/obsidian-publisher/convert.mjs"); }
@@ -12,6 +13,7 @@ test("plain prose, tables, nested lists, unicode and callouts retain original bo
 	const result = await convert(note(body));
 	assert.ok(result.markdown.endsWith(body));
 	assert.equal(result.issues.filter(i=>i.severity === "error").length, 0);
+	assert.ok(parseFrontmatter(result.markdown).frontmatter.published instanceof Date, "Astro schema requires a YAML date");
 });
 test("code blocks, inline code and escaped wikilinks are not interpreted as embeds", async () => {
 	const body = "```md\n![[秘密照片.jpg]]\n==code==\n```\n`[[code]]` 与 \\[[escaped]]\n==真正高亮==";
