@@ -7,12 +7,28 @@
   img[src^="/obsidian-published/"] {
     display: block;
     margin-inline: auto;
+    margin-bottom: 0;
   }
 
   a[href^="/obsidian-published/"][href*="/originals/"] {
     display: block;
     width: fit-content;
-    margin-inline: auto;
+    margin: 0 0 0 auto;
+    color: #a1a1aa;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.4;
+    text-decoration: none;
+    background: none;
+    border: none;
+
+    &:hover,
+    &:active {
+      color: #71717a;
+      background: none;
+      border: none;
+      text-decoration: underline;
+    }
   }
 
   body.sticky-navbar & {

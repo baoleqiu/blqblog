@@ -137,10 +137,6 @@ class PublisherView extends ItemView {
 		const record = this.plugin.record();
 		const header = el.createDiv({ cls: "blq-header" });
 		header.createEl("h2", { text: "博客工作台" });
-		header.createEl("p", {
-			text: "左侧写原文 · 右侧看博客 · 文章信息自动保存",
-			cls: "blq-muted",
-		});
 		const tools = header.createDiv({ cls: "blq-actions" });
 		this.button(tools, "绑定当前笔记", () =>
 			this.plugin.bind(
