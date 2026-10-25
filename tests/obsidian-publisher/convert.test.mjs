@@ -143,7 +143,7 @@ test("source private properties do not leak into generated public frontmatter", 
 	assert.ok(result.markdown.includes('title: "标题\\n---\\ninjected: yes"'));
 	assert.ok(result.markdown.endsWith("正文"));
 });
-test("wiki and markdown image references export bytes, widths and usable original links", async (t) => {
+test("wiki and markdown images open originals in a lightbox without visible link text", async (t) => {
 	const dir = await temporary(t);
 	const image = await fixtureImage(dir);
 	const before = await fs.readFile(image);
@@ -154,8 +154,19 @@ test("wiki and markdown image references export bytes, widths and usable origina
 	const result = await convert(snapshot);
 	assert.equal(result.assets.length, 1);
 	assert.ok(result.markdown.includes('width="40"'));
-	assert.ok(result.markdown.includes("查看原图"));
-	assert.ok(result.markdown.includes("/originals/"));
+	assert.ok(!result.markdown.includes("查看原图"));
+	assert.equal((result.markdown.match(/data-no-swup/g) || []).length, 2);
+	assert.equal(
+		(result.markdown.match(/data-fancybox="blq-images"/g) || []).length,
+		2,
+	);
+	assert.ok(result.markdown.includes(`href="${result.assets[0].originalUrl}"`));
+	assert.ok(
+		result.markdown.includes(
+			`<img class="blq-image" src="${result.assets[0].displayUrl}"`,
+		),
+	);
+	assert.match(result.markdown, /aria-label="[^"]+"[^>]*><img[^>]+><\/a>/);
 	assert.deepEqual(await fs.readFile(image), before);
 	assert.equal(result.issues.filter((i) => i.severity === "error").length, 0);
 });

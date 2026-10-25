@@ -9,7 +9,7 @@ import "@/styles/fancybox-custom.css";
 
   async function setup() {
     const selectors = [
-      ".custom-md img, #post-cover img, .moment-images img",
+      ".custom-md img:not(.blq-image), #post-cover img, .moment-images img",
       ".moment-images a[data-fancybox]",
       "[data-fancybox]:not(.moment-images a)"
     ];
@@ -47,6 +47,7 @@ import "@/styles/fancybox-custom.css";
         },
       },
       animated: true,
+      backdropClick: "close",
       dragToClose: true,
       keyboard: {
         Escape: "close",
@@ -70,7 +71,7 @@ import "@/styles/fancybox-custom.css";
     };
 
     // 绑定图片
-    Fancybox.bind(".custom-md img, #post-cover img, .moment-images img", {
+    Fancybox.bind(".custom-md img:not(.blq-image), #post-cover img, .moment-images img", {
       ...commonOptions,
       groupAll: true,
       Carousel: {

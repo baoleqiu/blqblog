@@ -173,7 +173,7 @@ export async function convertNote(snapshot) {
 		const height = requested?.[2]
 			? Math.min(10000, Math.max(1, +requested[2]))
 			: Math.round((asset.height * width) / asset.width);
-		return `<img src="${asset.displayUrl}" alt="${html(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"> <a href="${asset.originalUrl}" target="_blank" rel="noopener noreferrer">查看原图</a>`;
+		return `<a class="blq-lightbox no-styling" href="${asset.originalUrl}" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：${html(alt || "图片")}"><img class="blq-image" src="${asset.displayUrl}" alt="${html(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"></a>`;
 	}
 	for (const node of imageNodes) {
 		const start = node.position.start.offset;
