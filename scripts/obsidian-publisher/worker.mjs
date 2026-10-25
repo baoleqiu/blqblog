@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { PreviewManager } from "./preview.mjs";
+import { isObsidianConfig } from "./workspace.mjs";
 
 const repoRoot = path.resolve(
 	process.argv[process.argv.indexOf("--repo") + 1] || process.cwd(),
@@ -18,6 +19,7 @@ try {
 	let timer;
 	watcher = fs.watch(repoRoot, { recursive: true }, (_event, filename) => {
 		const file = String(filename || "").replaceAll("\\", "/");
+		if (isObsidianConfig(file)) return;
 		if (
 			!/^(src\/|public\/|astro\.config|svelte\.config|package\.json|pnpm-lock)/.test(
 				file,

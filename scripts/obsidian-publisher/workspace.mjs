@@ -6,11 +6,15 @@ const digestCache = new Map();
 const roots = new Set(["src", "public", "scripts", "patches"]);
 const rootFile =
 	/^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|pagefind\.yml|vercel\.json|wrangler\.jsonc|\.npmrc|astro\.config\..+|tsconfig.*\.json|svelte\.config\..+|tailwind\.config\..+|postcss\.config\..+)$/;
+export function isObsidianConfig(file) {
+	return file.split(/[\\/]/).some((part) => part.toLowerCase() === ".obsidian");
+}
 export async function sourceFiles(repoRoot) {
 	const result = [];
 	async function walk(directory, prefix) {
 		for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
 			const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+			if (isObsidianConfig(relative)) continue;
 			if (!prefix && !(roots.has(entry.name) || rootFile.test(entry.name)))
 				continue;
 			if (relative === "scripts/obsidian-publisher") continue;

@@ -105,6 +105,22 @@ test("untracked render inputs block publication while unrelated untracked files 
 		/未跟踪|构建输入/,
 	);
 });
+
+test("nested Obsidian configuration does not block publication or enter its commit", async (t) => {
+	const { repo, git, publisher } = await setup(t);
+	const name = "src/content/posts/.obsidian/workspace.json";
+	await fs.mkdir(path.dirname(path.join(repo, name)), { recursive: true });
+	await fs.writeFile(path.join(repo, name), "PRIVATE-CONFIG");
+	const op = await publisher.publish(candidate, settings);
+	assert.equal(op.status, "pushed");
+	assert.ok(
+		!(await git("ls-tree", "-r", "--name-only", "HEAD")).includes(".obsidian"),
+	);
+	assert.equal(
+		await fs.readFile(path.join(repo, name), "utf8"),
+		"PRIVATE-CONFIG",
+	);
+});
 test("publication commits only owned paths, reports pending deployment and can verify exact version", async (t) => {
 	const { repo, git, publisher } = await setup(t);
 	await fs.writeFile(path.join(repo, "unrelated.txt"), "private");

@@ -55,3 +55,27 @@ test("workspace mirrors theme, excludes private folders, cleans stale files and 
 		/越界/,
 	);
 });
+
+test("nested Obsidian configuration is never copied and does not change the theme fingerprint", async (t) => {
+	const repo = await temporary(t);
+	const dest = path.join(repo, "cache/preview");
+	const privateFiles = [
+		"src/content/posts/.obsidian/workspace.json",
+		"public/.obsidian/plugins/example/data.json",
+	];
+	for (const name of privateFiles) {
+		await fs.mkdir(path.dirname(path.join(repo, name)), { recursive: true });
+		await fs.writeFile(path.join(repo, name), "PRIVATE-CONFIG");
+	}
+	const before = await engine.themeFingerprint(repo);
+	await engine.syncWorkspace(repo, dest);
+	for (const name of privateFiles) {
+		await assert.rejects(fs.access(path.join(dest, name)), { code: "ENOENT" });
+		assert.equal(
+			await fs.readFile(path.join(repo, name), "utf8"),
+			"PRIVATE-CONFIG",
+		);
+		await fs.writeFile(path.join(repo, name), "CHANGED-PRIVATE-CONFIG");
+	}
+	assert.equal(await engine.themeFingerprint(repo), before);
+});
