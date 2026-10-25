@@ -8,6 +8,7 @@ const {
 const { PreviewController } = require("./controller.cjs");
 const model = require("./model.cjs");
 const VIEW_TYPE = "blqblog-publisher";
+const PREVIEW_INTERVAL = 60_000;
 const labels = {
 	draft: "本地草稿",
 	prepared: "检查与提交中",
@@ -62,6 +63,9 @@ class PublisherView extends ItemView {
 		this.plugin = plugin;
 		this.control = new PreviewController();
 		this.timer = null;
+		this.dirty = false;
+		this.refreshing = false;
+		this.refreshAfterBusy = false;
 		this.closed = false;
 	}
 	getViewType() {
@@ -85,6 +89,7 @@ class PublisherView extends ItemView {
 	async onClose() {
 		this.closed = true;
 		clearTimeout(this.timer);
+		this.timer = null;
 		this.control.invalidate();
 		await this.plugin.closeClient();
 	}
@@ -96,7 +101,6 @@ class PublisherView extends ItemView {
 			!this.frame ||
 			event.source !== this.frame.contentWindow ||
 			event.origin !== new URL(result.url).origin ||
-			this.frameGeneration !== this.control.generation ||
 			event.data?.fingerprint !== result.fingerprint
 		)
 			return;
@@ -105,7 +109,11 @@ class PublisherView extends ItemView {
 				this.scrollPosition = event.data.position;
 			return;
 		}
-		if (event.data.type !== "blq-preview-ready") return;
+		if (
+			event.data.type !== "blq-preview-ready" ||
+			this.frameGeneration !== this.control.generation
+		)
+			return;
 		this.control.displayed(event.data.fingerprint);
 		this.buttons();
 		this.message(
@@ -122,7 +130,11 @@ class PublisherView extends ItemView {
 		this.scrollPosition = 0;
 		this.control.bind(record?.id);
 		this.render();
-		if (record) this.changed();
+		this.dirty = Boolean(record);
+		if (record) {
+			if (this.refreshing) this.refreshAfterBusy = true;
+			else this.plugin.safe(() => this.refresh());
+		}
 	}
 	message(text, error = false) {
 		if (this.statusEl) {
@@ -132,6 +144,8 @@ class PublisherView extends ItemView {
 	}
 	render() {
 		this.control.invalidate();
+		this.frame = null;
+		this.frameResult = null;
 		const el = this.contentEl;
 		el.empty();
 		el.addClass("blq-publisher");
@@ -265,9 +279,9 @@ class PublisherView extends ItemView {
 			this.changed();
 		});
 		const bar = el.createDiv({ cls: "blq-actions" });
-		this.button(bar, "刷新预览", () => this.refresh());
+		this.refreshButton = this.button(bar, "刷新预览", () => this.refresh());
 		this.button(bar, "浏览器打开", () => {
-			if (this.control.result) window.open(this.control.result.url, "_blank");
+			if (this.frameResult) window.open(this.frameResult.url, "_blank");
 		});
 		this.publishButton = this.button(
 			bar,
@@ -315,20 +329,46 @@ class PublisherView extends ItemView {
 	}
 	buttons() {
 		if (this.publishButton) this.publishButton.disabled = !this.control.ready();
+		if (this.refreshButton) {
+			this.refreshButton.disabled =
+				this.refreshing || this.control.publishing || this.closed;
+			this.refreshButton.setText(this.refreshing ? "正在更新……" : "刷新预览");
+		}
 	}
 	changed() {
+		this.dirty = true;
 		this.control.invalidate();
 		this.buttons();
-		clearTimeout(this.timer);
 		if (this.control.publishing || this.closed) return;
-		this.message("内容已改变，正在准备预览……");
-		this.timer = setTimeout(() => this.plugin.safe(() => this.refresh()), 900);
+		this.message(
+			this.refreshing
+				? "正在生成预览；新修改将在下一轮更新，也可完成后手动刷新。"
+				: "内容有修改，将在 1 分钟内自动更新，也可点击「刷新预览」。",
+		);
+		this.scheduleRefresh();
+	}
+	scheduleRefresh() {
+		if (
+			!this.dirty ||
+			this.timer ||
+			this.closed ||
+			this.control.publishing ||
+			this.refreshing
+		)
+			return;
+		this.timer = setTimeout(() => {
+			this.timer = null;
+			this.plugin.safe(() => this.refresh());
+		}, PREVIEW_INTERVAL);
 	}
 	async refresh() {
 		clearTimeout(this.timer);
-		if (this.control.publishing || this.closed) return;
+		this.timer = null;
+		if (this.control.publishing || this.closed || this.refreshing) return;
 		const record = this.plugin.record();
 		if (!record) return;
+		this.refreshing = true;
+		this.dirty = false;
 		const generation = this.control.begin();
 		this.buttons();
 		this.message("正在生成预览……");
@@ -338,7 +378,10 @@ class PublisherView extends ItemView {
 			const result = await this.plugin
 				.getClient()
 				.request("preview", { snapshot });
-			if (this.closed || !this.control.accept(generation, result)) return;
+			if (this.closed || this.plugin.record()?.id !== record.id) return;
+			// Keep the latest completed snapshot visible while typing, but only
+			// a matching generation can pass the publication handshake.
+			this.control.accept(generation, result);
 			if (!record.metadata.published) {
 				record.metadata.published = result.metadata.published;
 				await this.plugin.save();
@@ -378,6 +421,10 @@ class PublisherView extends ItemView {
 				);
 			});
 			frame.src = result.url;
+			if (generation !== this.control.generation)
+				this.message(
+					"已显示本轮预览；还有新修改，将在 1 分钟内更新，也可手动刷新。",
+				);
 		} catch (error) {
 			if (
 				this.closed ||
@@ -388,6 +435,13 @@ class PublisherView extends ItemView {
 			this.message(error.message, true);
 			this.buttons();
 			throw error;
+		} finally {
+			this.refreshing = false;
+			this.buttons();
+			if (this.refreshAfterBusy && !this.closed) {
+				this.refreshAfterBusy = false;
+				this.plugin.safe(() => this.refresh());
+			} else this.scheduleRefresh();
 		}
 	}
 	async publish() {
