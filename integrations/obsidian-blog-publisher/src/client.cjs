@@ -1,6 +1,8 @@
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const readline = require("node:readline");
+const closedError = () =>
+	Object.assign(Error("发布面板已关闭。"), { code: "PUBLISHER_CLOSED" });
 class PublisherClient {
 	constructor(settings, onEvent = () => {}) {
 		this.settings = settings;
@@ -10,7 +12,7 @@ class PublisherClient {
 		this.closed = false;
 	}
 	start() {
-		if (this.closed) throw Error("发布器已关闭，请重新打开面板。");
+		if (this.closed) throw closedError();
 		if (this.child) return;
 		if (!this.settings.repoPath)
 			throw Error("请先在插件设置填写博客项目路径。");
@@ -33,11 +35,14 @@ class PublisherClient {
 		);
 		const child = this.child;
 		const fail = () => {
-			if (this.child === child) this.child = null;
+			if (this.child !== child) return;
+			this.child = null;
 			for (const request of this.pending.values()) {
 				clearTimeout(request.timer);
 				request.reject(
-					Error("本地发布器退出，请重新预览；已创建的发布操作会保留。"),
+					this.closed
+						? closedError()
+						: Error("本地发布器退出，请重新预览；已创建的发布操作会保留。"),
 				);
 			}
 			this.pending.clear();
@@ -54,7 +59,8 @@ class PublisherClient {
 				return;
 			}
 			if (message.event) {
-				this.onEvent(message.event, message.data);
+				if (!this.closed && this.child === child)
+					this.onEvent(message.event, message.data);
 				return;
 			}
 			const request = this.pending.get(message.requestId);
@@ -94,20 +100,27 @@ class PublisherClient {
 	async dispose() {
 		if (this.closed) return;
 		const child = this.child;
+		const stop = child ? this.request("stop") : null;
+		this.closed = true;
 		if (child) {
+			let timer;
 			try {
 				await Promise.race([
-					this.request("stop"),
-					new Promise((resolve) => setTimeout(resolve, 4000)),
+					stop,
+					new Promise((resolve) => {
+						timer = setTimeout(resolve, 4000);
+					}),
 				]);
-			} catch {}
+			} catch {
+			} finally {
+				clearTimeout(timer);
+			}
 			child.stdin.end();
 		}
-		this.closed = true;
 		// Closing stdin lets the worker finish a journaled publication and then stop its own preview.
 		for (const request of this.pending.values()) {
 			clearTimeout(request.timer);
-			request.reject(Error("发布面板已关闭。"));
+			request.reject(closedError());
 		}
 		this.pending.clear();
 	}

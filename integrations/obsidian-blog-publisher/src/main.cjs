@@ -86,6 +86,7 @@ module.exports = class BlogPublisher extends Plugin {
 		try {
 			return await fn();
 		} catch (error) {
+			if (error.code === "PUBLISHER_CLOSED") return;
 			new Notice(error.message, 10000);
 			this.view()?.message(error.message, true);
 		}

@@ -79,6 +79,7 @@ class PublisherView extends ItemView {
 			this.handlePreviewMessage(event),
 		);
 		await this.plugin.safe(() => this.plugin.recover());
+		if (this.closed) return;
 		this.bind(this.plugin.record());
 	}
 	async onClose() {
@@ -333,6 +334,7 @@ class PublisherView extends ItemView {
 		this.message("正在生成预览……");
 		try {
 			const snapshot = await this.plugin.snapshot(record);
+			if (this.closed || generation !== this.control.generation) return;
 			const result = await this.plugin
 				.getClient()
 				.request("preview", { snapshot });
@@ -377,10 +379,14 @@ class PublisherView extends ItemView {
 			});
 			frame.src = result.url;
 		} catch (error) {
-			if (generation === this.control.generation) {
-				this.message(error.message, true);
-				this.buttons();
-			}
+			if (
+				this.closed ||
+				generation !== this.control.generation ||
+				error.code === "PUBLISHER_CLOSED"
+			)
+				return;
+			this.message(error.message, true);
+			this.buttons();
 			throw error;
 		}
 	}

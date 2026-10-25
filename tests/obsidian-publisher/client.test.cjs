@@ -21,3 +21,17 @@ test("client correlates worker errors, stops cleanly and fails pending requests 
 	client.child.kill();
 	await assert.rejects(pending, /退出|关闭/);
 });
+test("disposing marks the client closed immediately and pending work is a typed cancellation", async () => {
+	const client = new Client({ repoPath: process.cwd() });
+	// Keep the transport pending without starting a real preview server.
+	client.child = { stdin: { write() {}, end() {} } };
+	const pending = client.request("preview").catch((error) => error);
+	const closing = client.dispose();
+	const immediatelyClosed = client.closed;
+	const lateRequest = client.request("inspect").catch((error) => error);
+	await closing;
+	assert.equal(immediatelyClosed, true);
+	assert.equal((await pending).code, "PUBLISHER_CLOSED");
+	assert.equal((await lateRequest).code, "PUBLISHER_CLOSED");
+	assert.equal(client.pending.size, 0);
+});
