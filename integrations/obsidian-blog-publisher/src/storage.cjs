@@ -17,35 +17,62 @@ class DataStore {
 				const state = validateState(JSON.parse(await this.adapter.read(file)));
 				this.recovered = file === this.backup;
 				return state;
-			} catch (error) { primaryError ||= error; }
+			} catch (error) {
+				primaryError ||= error;
+			}
 		}
-		if (primaryError) throw Error(`发布数据及备份无法读取，未覆盖原文件：${primaryError.message}`);
+		if (primaryError)
+			throw Error(
+				`发布数据及备份无法读取，未覆盖原文件：${primaryError.message}`,
+			);
 		return null;
 	}
 	save(state) {
 		const content = JSON.stringify(validateState(state), null, 2);
 		const write = async () => {
-			if (!(await this.adapter.exists(this.directory))) await this.adapter.mkdir(this.directory);
+			if (!(await this.adapter.exists(this.directory)))
+				await this.adapter.mkdir(this.directory);
 			if (await this.adapter.exists(this.file)) {
 				let previous;
-				try { previous = await this.adapter.read(this.file); validateState(JSON.parse(previous)); }
-				catch { previous = null; }
+				try {
+					previous = await this.adapter.read(this.file);
+					validateState(JSON.parse(previous));
+				} catch {
+					previous = null;
+				}
 				if (previous) await this.adapter.write(this.backup, previous);
 			}
 			const temporary = `${this.file}.tmp`;
 			await this.adapter.write(temporary, content);
 			validateState(JSON.parse(await this.adapter.read(temporary)));
-			await this.adapter.rename(temporary, this.file);
+			if (typeof this.adapter.getBasePath === "function") {
+				// Obsidian's adapter.rename deliberately refuses an existing destination.
+				// Desktop filesystem rename provides replacement without a missing-file window.
+				const fs = require("node:fs/promises"), path = require("node:path");
+				const root = await fs.realpath(this.adapter.getBasePath());
+				const directory = await fs.realpath(path.join(root,this.directory));
+				const relative = path.relative(root,directory);
+				if(!relative || relative.startsWith("..") || path.isAbsolute(relative))throw Error("插件数据目录越界。");
+				await fs.rename(path.join(directory,"data.json.tmp"),path.join(directory,"data.json"));
+			} else await this.adapter.rename(temporary, this.file);
 		};
 		this.queue = this.queue.catch(() => {}).then(write);
 		return this.queue;
 	}
-	async export() { await this.queue; return JSON.stringify(await this.load(), null, 2); }
+	async export() {
+		await this.queue;
+		return JSON.stringify(await this.load(), null, 2);
+	}
 	async import(text) {
 		await this.queue;
-		if (text.length > 20 * 1024 * 1024) throw Error("导入文件过大，请检查备份格式。");
+		if (text.length > 20 * 1024 * 1024)
+			throw Error("导入文件过大，请检查备份格式。");
 		let incoming;
-		try { incoming = JSON.parse(text); } catch { throw Error("备份不是有效 JSON 格式。"); }
+		try {
+			incoming = JSON.parse(text);
+		} catch {
+			throw Error("备份不是有效 JSON 格式。");
+		}
 		const merged = validateImport(await this.load(), incoming);
 		await this.save(merged);
 		return merged;

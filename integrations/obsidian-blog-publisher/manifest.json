@@ -1,0 +1,9 @@
+{
+	"id": "blqblog-publisher",
+	"name": "BLQ 博客发布",
+	"version": "0.1.0",
+	"minAppVersion": "1.8.0",
+	"description": "在独立面板预览并发布 Obsidian 笔记到个人博客，保持原笔记简洁。",
+	"author": "BLQ",
+	"isDesktopOnly": true
+}
