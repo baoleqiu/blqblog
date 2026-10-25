@@ -1,0 +1,11 @@
+{
+  "id": "90fd0856-805f-43f0-898f-61704670136a",
+  "operationId": "571b4d2c-5ad3-41b1-9929-a3cc7b405867",
+  "action": "publish",
+  "contentFingerprint": "77caf6d7eafaf5a0897042780c3eb03dada39ee0ed706e41743e8a61249136a7",
+  "updated": null,
+  "files": {
+    "public/obsidian-published/90fd0856-805f-43f0-898f-61704670136a/originals/65eb49324af9a7e4d5d6fd83a885021683a0459dbb9ac21b225ebda4bca49d08.jpg": "65eb49324af9a7e4d5d6fd83a885021683a0459dbb9ac21b225ebda4bca49d08",
+    "src/content/posts/obsidian/90fd0856-805f-43f0-898f-61704670136a/index.md": "b55340553fdd1599d2e0be8c4336c9ebd38eca3a924c8a4d58a50671c2bcce44"
+  }
+}
