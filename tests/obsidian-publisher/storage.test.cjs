@@ -97,9 +97,15 @@ test("invalid imported data leaves the current state intact", async (t) => {
 	assert.equal((await store.load()).records[0].metadata.title, "kept");
 });
 
-test("desktop saves replace data atomically when Obsidian rename refuses existing destinations", async t => {
-	const {store,dir}=await setup(t);store.adapter.getBasePath=()=>dir;
-	store.adapter.rename=async(a,b)=>{if(await store.adapter.exists(b))throw Error("Destination file already exists!");await fs.rename(path.join(dir,a),path.join(dir,b));};
-	await store.save(state("one"));await store.save(state("two"));
-	assert.equal((await store.load()).records[0].metadata.title,"two");
+test("desktop saves replace data atomically when Obsidian rename refuses existing destinations", async (t) => {
+	const { store, dir } = await setup(t);
+	store.adapter.getBasePath = () => dir;
+	store.adapter.rename = async (a, b) => {
+		if (await store.adapter.exists(b))
+			throw Error("Destination file already exists!");
+		await fs.rename(path.join(dir, a), path.join(dir, b));
+	};
+	await store.save(state("one"));
+	await store.save(state("two"));
+	assert.equal((await store.load()).records[0].metadata.title, "two");
 });

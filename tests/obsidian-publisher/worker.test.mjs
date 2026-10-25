@@ -1,8 +1,9 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import path from "node:path";
 import fs from "node:fs/promises";
+import path from "node:path";
+import { test } from "node:test";
+
 test("worker correlates JSONL errors and exits on stop without leaking body", async () => {
 	const script = path.resolve("scripts/obsidian-publisher/worker.mjs");
 	await fs.access(script);
@@ -10,8 +11,8 @@ test("worker correlates JSONL errors and exits on stop without leaking body", as
 		windowsHide: true,
 		stdio: ["pipe", "pipe", "pipe"],
 	});
-	let stdout = "",
-		stderr = "";
+	let stdout = "";
+	let stderr = "";
 	child.stdout.on("data", (x) => (stdout += x));
 	child.stderr.on("data", (x) => (stderr += x));
 	const ended = new Promise((resolve, reject) => {
@@ -21,13 +22,13 @@ test("worker correlates JSONL errors and exits on stop without leaking body", as
 		);
 	});
 	child.stdin.write(
-		JSON.stringify({
+		`${JSON.stringify({
 			requestId: "a",
 			command: "unknown",
 			payload: { markdown: "PRIVATE-BODY" },
-		}) + "\n",
+		})}\n`,
 	);
-	child.stdin.write(JSON.stringify({ requestId: "b", command: "stop" }) + "\n");
+	child.stdin.write(`${JSON.stringify({ requestId: "b", command: "stop" })}\n`);
 	await ended;
 	const lines = stdout
 		.trim()

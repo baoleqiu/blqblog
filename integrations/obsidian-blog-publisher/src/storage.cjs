@@ -48,12 +48,17 @@ class DataStore {
 			if (typeof this.adapter.getBasePath === "function") {
 				// Obsidian's adapter.rename deliberately refuses an existing destination.
 				// Desktop filesystem rename provides replacement without a missing-file window.
-				const fs = require("node:fs/promises"), path = require("node:path");
+				const fs = require("node:fs/promises");
+				const path = require("node:path");
 				const root = await fs.realpath(this.adapter.getBasePath());
-				const directory = await fs.realpath(path.join(root,this.directory));
-				const relative = path.relative(root,directory);
-				if(!relative || relative.startsWith("..") || path.isAbsolute(relative))throw Error("插件数据目录越界。");
-				await fs.rename(path.join(directory,"data.json.tmp"),path.join(directory,"data.json"));
+				const directory = await fs.realpath(path.join(root, this.directory));
+				const relative = path.relative(root, directory);
+				if (!relative || relative.startsWith("..") || path.isAbsolute(relative))
+					throw Error("插件数据目录越界。");
+				await fs.rename(
+					path.join(directory, "data.json.tmp"),
+					path.join(directory, "data.json"),
+				);
 			} else await this.adapter.rename(temporary, this.file);
 		};
 		this.queue = this.queue.catch(() => {}).then(write);

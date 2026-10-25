@@ -31,7 +31,7 @@ function createState(settings = {}) {
 function normalizeMetadata(input = {}, currentDate = today()) {
 	const title = String(input.title ?? "").trim();
 	if (!title) throw Error("请填写文章标题。");
-	let published =
+	const published =
 		input.published instanceof Date
 			? input.published.toISOString().slice(0, 10)
 			: String(input.published || "").trim();
@@ -141,6 +141,10 @@ function markSourceMissing(state, sourcePath) {
 		)
 			record.sourceMissing = true;
 }
+function reconcileSources(state, exists) {
+	for (const record of state.records)
+		record.sourceMissing = !exists(record.sourcePath);
+}
 function relinkSource(state, id, sourcePath) {
 	const record = state.records.find((r) => r.id === id);
 	if (!record) throw Error("发布记录不存在。");
@@ -160,8 +164,8 @@ function validateState(value) {
 		throw Error("发布数据版本不支持或格式无效。");
 	if (!value.settings || !Array.isArray(value.records))
 		throw Error("发布数据格式无效。");
-	const ids = new Set(),
-		sources = new Set();
+	const ids = new Set();
+	const sources = new Set();
 	for (const record of value.records) {
 		if (
 			!record ||
@@ -213,6 +217,7 @@ module.exports = {
 	updateMetadata,
 	renameSource,
 	markSourceMissing,
+	reconcileSources,
 	relinkSource,
 	validateState,
 	validateImport,

@@ -1,7 +1,8 @@
+import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import fs from "node:fs";
 import { PreviewManager } from "./preview.mjs";
+
 const repoRoot = path.resolve(
 	process.argv[process.argv.indexOf("--repo") + 1] || process.cwd(),
 );
@@ -9,10 +10,10 @@ const send = (data) => process.stdout.write(`${JSON.stringify(data)}\n`);
 const preview = new PreviewManager(repoRoot, (message) =>
 	send({ event: "progress", data: { message } }),
 );
-let publisher,
-	watcher,
-	queue = Promise.resolve(),
-	stopping = false;
+let publisher;
+let watcher;
+let queue = Promise.resolve();
+let stopping = false;
 try {
 	let timer;
 	watcher = fs.watch(repoRoot, { recursive: true }, (_event, filename) => {

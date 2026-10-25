@@ -2,12 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+
 const root = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../..",
 );
-const source = path.join(root, "integrations/obsidian-blog-publisher"),
-	output = path.join(root, "cache/obsidian-publisher-plugin");
+const source = path.join(root, "integrations/obsidian-blog-publisher");
+const output = path.join(root, "cache/obsidian-publisher-plugin");
 await fs.mkdir(output, { recursive: true });
 await build({
 	entryPoints: [path.join(source, "src/main.cjs")],

@@ -1,9 +1,10 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { test } from "node:test";
 import sharp from "sharp";
-import { temporary, fixtureImage } from "./fixtures.mjs";
+import { fixtureImage, temporary } from "./fixtures.mjs";
+
 let assets = {};
 try {
 	assets = await import("../../scripts/obsidian-publisher/assets.mjs");

@@ -3,12 +3,12 @@ import {
 	createMarkdownProcessor,
 	parseFrontmatter,
 } from "@astrojs/markdown-remark";
-import remarkMath from "remark-math";
 import katex from "katex";
+import remarkMath from "remark-math";
 import "katex/dist/contrib/mhchem.mjs";
 import model from "../../integrations/obsidian-blog-publisher/src/model.cjs";
-import { hash, html, validateId, validateMetadata } from "./common.mjs";
 import { prepareImage } from "./assets.mjs";
+import { hash, html, validateId, validateMetadata } from "./common.mjs";
 
 const markdownText = (text) => String(text).replace(/[\\`*_[\]<>]/g, "\\$&");
 const decode = (text) => {
@@ -20,15 +20,15 @@ const decode = (text) => {
 };
 export async function convertNote(snapshot) {
 	validateId(snapshot.id);
-	const issues = [],
-		files = {},
-		assets = [],
-		edits = [],
-		protectedRanges = [],
-		imageNodes = [],
-		definitions = new Map();
-	let body = String(snapshot.markdown),
-		metadata;
+	const issues = [];
+	const files = {};
+	const assets = [];
+	const edits = [];
+	const protectedRanges = [];
+	const imageNodes = [];
+	const definitions = new Map();
+	let body = String(snapshot.markdown);
+	let metadata;
 	const issue = (severity, code, message, offset = 0) =>
 		issues.push({
 			severity,
@@ -51,12 +51,19 @@ export async function convertNote(snapshot) {
 	function capture() {
 		return (tree) => {
 			function walk(node) {
-				const start = node.position?.start.offset,
-					end = node.position?.end.offset;
+				const start = node.position?.start.offset;
+				const end = node.position?.end.offset;
 				if (
-					["code", "inlineCode", "math", "inlineMath", "html"].includes(
-						node.type,
-					)
+					[
+						"code",
+						"inlineCode",
+						"math",
+						"inlineMath",
+						"html",
+						"link",
+						"linkReference",
+						"definition",
+					].includes(node.type)
 				)
 					protectedRanges.push([start, end]);
 				if (
@@ -109,7 +116,8 @@ export async function convertNote(snapshot) {
 	await processor.render(body);
 	const escaped = (offset) => {
 		let count = 0;
-		while (offset > 0 && body[--offset] === "\\") count++;
+		let cursor = offset;
+		while (cursor > 0 && body[--cursor] === "\\") count++;
 		return count % 2;
 	};
 	const protectedAt = (start, end) =>
@@ -157,8 +165,8 @@ export async function convertNote(snapshot) {
 		return `<img src="${asset.displayUrl}" alt="${html(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"> <a href="${asset.originalUrl}" target="_blank" rel="noopener noreferrer">查看原图</a>`;
 	}
 	for (const node of imageNodes) {
-		const start = node.position.start.offset,
-			end = node.position.end.offset;
+		const start = node.position.start.offset;
+		const end = node.position.end.offset;
 		const target = node.url ?? definitions.get(node.identifier);
 		if (!target) {
 			issue("error", "missing-asset", "图片引用没有对应的链接定义。", start);
@@ -169,13 +177,13 @@ export async function convertNote(snapshot) {
 		protectedRanges.push([start, end]);
 	}
 	for (const match of body.matchAll(/(!?)\[\[([^\]\r\n]+)\]\]/g)) {
-		const start = match.index,
-			end = start + match[0].length;
+		const start = match.index;
+		const end = start + match[0].length;
 		if (protectedAt(start, end)) continue;
-		const [rawTarget, ...aliases] = match[2].split("|"),
-			alias = aliases.join("|");
-		const [target, anchor] = rawTarget.split("#"),
-			resolution = resolve(target);
+		const [rawTarget, ...aliases] = match[2].split("|");
+		const alias = aliases.join("|");
+		const [target, anchor] = rawTarget.split("#");
+		const resolution = resolve(target);
 		if (match[1]) {
 			if (
 				resolution?.kind === "note" ||
@@ -198,8 +206,8 @@ export async function convertNote(snapshot) {
 			);
 			if (replacement) edits.push({ start, end, text: replacement });
 		} else {
-			const label = markdownText(alias || rawTarget),
-				url = snapshot.publishedLinks?.[resolution?.notePath];
+			const label = markdownText(alias || rawTarget);
+			const url = snapshot.publishedLinks?.[resolution?.notePath];
 			if (url && /^\/posts\/[a-zA-Z0-9/%_.~-]+\/$/.test(url)) {
 				edits.push({ start, end, text: `[${label}](${url})` });
 				if (anchor)
@@ -220,11 +228,20 @@ export async function convertNote(snapshot) {
 			}
 		}
 	}
+	let inlineProcessor;
 	for (const match of body.matchAll(/==([^=\r\n]+)==/g)) {
-		const start = match.index,
-			end = start + match[0].length;
-		if (!protectedAt(start, end))
-			edits.push({ start, end, text: `<mark>${html(match[1])}</mark>` });
+		const start = match.index;
+		const end = start + match[0].length;
+		if (!protectedAt(start, end)) {
+			inlineProcessor ||= await createMarkdownProcessor({
+				syntaxHighlight: false,
+				smartypants: false,
+			});
+			const inner = (await inlineProcessor.render(match[1])).code
+				.trim()
+				.replace(/^<p>|<\/p>$/g, "");
+			edits.push({ start, end, text: `<mark>${inner}</mark>` });
+		}
 	}
 	let image = "";
 	if (metadata.cover) {
@@ -244,13 +261,14 @@ export async function convertNote(snapshot) {
 		image,
 		draft: false,
 	};
-	const markdown = `---\n${Object.entries(fields)
-		.map(
-			([key, value]) =>
-				`${key}: ${key === "published" ? (/^\d{4}-\d{2}-\d{2}$/.test(value) && !issues.some((i) => i.code === "metadata") ? value : model.today()) : JSON.stringify(value)}`,
-		)
-		.join("\n")}\n---\n${converted}`;
-	files[`src/content/posts/obsidian/${snapshot.id}/index.md`] = markdown;
+	const serialize = () =>
+		`---\n${Object.entries(fields)
+			.map(
+				([key, value]) =>
+					`${key}: ${key === "published" || key === "updated" ? (/^\d{4}-\d{2}-\d{2}$/.test(value) && !issues.some((i) => i.code === "metadata") ? value : model.today()) : JSON.stringify(value)}`,
+			)
+			.join("\n")}\n---\n${converted}`;
+	let markdown = serialize();
 	const contentFingerprint = hash(
 		JSON.stringify({
 			rules: 1,
@@ -259,6 +277,17 @@ export async function convertNote(snapshot) {
 			issues,
 		}),
 	);
+	let updated = snapshot.lastPublished?.updated || null;
+	if (
+		snapshot.lastPublished &&
+		snapshot.lastPublished.contentFingerprint !== contentFingerprint
+	)
+		updated = model.today();
+	if (updated) {
+		fields.updated = updated;
+		markdown = serialize();
+	}
+	files[`src/content/posts/obsidian/${snapshot.id}/index.md`] = markdown;
 	return {
 		id: snapshot.id,
 		articleUrl: `/posts/obsidian/${snapshot.id}/`,
@@ -267,7 +296,8 @@ export async function convertNote(snapshot) {
 		assets,
 		issues,
 		contentFingerprint,
-		fingerprint: contentFingerprint,
+		fingerprint: hash(`${contentFingerprint}:${markdown}`),
+		updated,
 		files,
 	};
 }

@@ -31,7 +31,7 @@ test("missing sources, blocking issues and active publication disable publish", 
 	assert.equal(typeof Controller, "function");
 	const c = new Controller();
 	c.bind("one");
-	let generation = c.begin();
+	const generation = c.begin();
 	c.accept(generation, { fingerprint: "v", issues: [{ severity: "error" }] });
 	c.displayed("v");
 	assert.equal(c.ready(), false);

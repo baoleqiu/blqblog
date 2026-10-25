@@ -1,7 +1,7 @@
-import path from "node:path";
-import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
+import fs from "node:fs/promises";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 export async function buildSite(root, onProgress = () => {}) {
 	const require = createRequire(path.join(root, "package.json"));

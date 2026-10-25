@@ -1,8 +1,9 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { test } from "node:test";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
-import { temporary, fixtureImage, note } from "./fixtures.mjs";
+import { fixtureImage, note, temporary } from "./fixtures.mjs";
+
 let converter = {};
 try {
 	converter = await import("../../scripts/obsidian-publisher/convert.mjs");
@@ -132,4 +133,30 @@ test("missing images, invalid ids and malformed metadata cannot produce a publis
 	assert.ok(
 		invalid.issues.some((i) => i.code === "metadata" && i.severity === "error"),
 	);
+});
+test("highlight does not rewrite destinations or reference definitions and preserves nested emphasis", async () => {
+	const body =
+		"[下载](https://example.test/==file==)\n\n[资料][x]\n\n[x]: https://example.test/==file==\n\n==**加粗**==";
+	const result = await convert(note(body));
+	assert.ok(result.markdown.includes("[下载](https://example.test/==file==)"));
+	assert.ok(result.markdown.includes("[x]: https://example.test/==file=="));
+	assert.ok(result.markdown.includes("<mark><strong>加粗</strong></mark>"));
+});
+test("real content updates emit a stable update date without changing original publication or idempotence", async () => {
+	const first = await convert(note("first"));
+	const prior = { contentFingerprint: first.contentFingerprint };
+	const updated = await convert(note("second", { lastPublished: prior }));
+	const fields = parseFrontmatter(updated.markdown).frontmatter;
+	assert.ok(fields.updated instanceof Date);
+	assert.equal(fields.published.toISOString().slice(0, 10), "2026-01-01");
+	const repeat = await convert(
+		note("second", {
+			lastPublished: {
+				contentFingerprint: updated.contentFingerprint,
+				updated: updated.updated,
+			},
+		}),
+	);
+	assert.equal(repeat.contentFingerprint, updated.contentFingerprint);
+	assert.equal(repeat.markdown, updated.markdown);
 });

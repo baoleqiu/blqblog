@@ -25,8 +25,8 @@ export async function sourceFiles(repoRoot) {
 	return result.sort();
 }
 async function digest(file) {
-	const stat = await fs.stat(file),
-		key = `${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
+	const stat = await fs.stat(file);
+	const key = `${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
 	const cached = digestCache.get(file);
 	if (cached?.key === key) return cached.hash;
 	const value = hash(await fs.readFile(file));
@@ -47,8 +47,8 @@ export async function syncWorkspace(
 ) {
 	assertInside(path.join(repoRoot, "cache"), workspaceRoot);
 	await fs.mkdir(workspaceRoot, { recursive: true });
-	const realRepo = await fs.realpath(repoRoot),
-		realWorkspace = await fs.realpath(workspaceRoot);
+	const realRepo = await fs.realpath(repoRoot);
+	const realWorkspace = await fs.realpath(workspaceRoot);
 	assertInside(path.join(realRepo, "cache"), realWorkspace);
 	const manifestPath = path.join(workspaceRoot, ".publisher-files.json");
 	let previous = {};
@@ -57,14 +57,14 @@ export async function syncWorkspace(
 	} catch (e) {
 		if (e.code !== "ENOENT") throw e;
 	}
-	const next = {},
-		sourceHashes = [],
-		deletion = new Set(deleted);
+	const next = {};
+	const sourceHashes = [];
+	const deletion = new Set(deleted);
 	for (const name of Object.keys(overlay))
 		assertInside(workspaceRoot, path.resolve(workspaceRoot, name));
 	for (const name of await sourceFiles(repoRoot)) {
-		const source = path.join(repoRoot, name),
-			fingerprint = await digest(source);
+		const source = path.join(repoRoot, name);
+		const fingerprint = await digest(source);
 		sourceHashes.push([name, fingerprint]);
 		if (deletion.has(name) || Object.hasOwn(overlay, name)) continue;
 		next[name] = fingerprint;

@@ -1,10 +1,10 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
-import { GitRepo } from "./git.mjs";
-import { assertInside, hash, validateId, writeAtomic } from "./common.mjs";
-import { syncWorkspace, themeFingerprint } from "./workspace.mjs";
 import { buildSite } from "./build.mjs";
+import { assertInside, hash, validateId, writeAtomic } from "./common.mjs";
+import { GitRepo } from "./git.mjs";
+import { syncWorkspace, themeFingerprint } from "./workspace.mjs";
 
 const existsBytes = (file) =>
 	fs.readFile(file).catch((e) => {
@@ -97,6 +97,7 @@ export class Publisher {
 			status,
 			commit,
 			contentFingerprint,
+			updated,
 			articleUrl,
 			error,
 		} = op;
@@ -107,6 +108,7 @@ export class Publisher {
 			status,
 			commit,
 			contentFingerprint,
+			updated,
 			articleUrl,
 			error,
 		};
@@ -167,13 +169,14 @@ export class Publisher {
 				throw Error("内容与线上提交一致，无需重复发布。");
 			}
 		}
-		const operationId = randomUUID(),
-			files = { ...(candidate?.files || {}) };
+		const operationId = randomUUID();
+		const files = { ...(candidate?.files || {}) };
 		const manifest = {
 			id,
 			operationId,
 			action,
 			contentFingerprint: candidate?.contentFingerprint || null,
+			updated: candidate?.updated || null,
 			files: Object.fromEntries(
 				Object.entries(files).map(([name, bytes]) => [name, hash(bytes)]),
 			),
@@ -224,6 +227,7 @@ export class Publisher {
 			siteUrl: settings.siteUrl,
 			articleUrl: candidate?.articleUrl || `/posts/obsidian/${id}/`,
 			contentFingerprint: candidate?.contentFingerprint || null,
+			updated: candidate?.updated || null,
 			changes,
 		};
 		await this.save(op);
@@ -290,6 +294,8 @@ export class Publisher {
 				op.commit = await this.git.commitPaths(
 					[...allowed],
 					`feat(blog): ${op.action} ${op.id} (${op.operationId})`,
+					op.base,
+					op.changes,
 				);
 				op.status = "committed";
 				await this.save(op);
@@ -304,7 +310,7 @@ export class Publisher {
 				throw Error("远端已有其他提交，请手动同步后检查发布记录。");
 			try {
 				this.onProgress("正在推送文章提交……");
-				await this.git.push();
+				await this.git.push(op.commit);
 				op.status = "pushed";
 				delete op.error;
 			} catch {

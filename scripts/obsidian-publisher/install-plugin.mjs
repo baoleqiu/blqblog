@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertInside } from "./common.mjs";
+
 const root = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../..",
@@ -11,8 +12,8 @@ if (!vaultArg)
 	throw Error(
 		"用法：node scripts/obsidian-publisher/install-plugin.mjs <笔记库路径>",
 	);
-const vault = await fs.realpath(vaultArg),
-	config = path.join(vault, ".obsidian");
+const vault = await fs.realpath(vaultArg);
+const config = path.join(vault, ".obsidian");
 await fs.access(config);
 const destination = assertInside(
 	vault,
@@ -20,8 +21,8 @@ const destination = assertInside(
 );
 await fs.mkdir(destination, { recursive: true });
 assertInside(vault, await fs.realpath(destination));
-const source = path.join(root, "cache/obsidian-publisher-plugin"),
-	backup = path.join(destination, `backup-${Date.now()}`);
+const source = path.join(root, "cache/obsidian-publisher-plugin");
+const backup = path.join(destination, `backup-${Date.now()}`);
 for (const file of ["manifest.json", "main.js", "styles.css"]) {
 	await fs.access(path.join(source, file));
 	try {

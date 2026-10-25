@@ -75,6 +75,9 @@ class PublisherView extends ItemView {
 	}
 	async onOpen() {
 		this.closed = false;
+		this.registerDomEvent(window, "message", (event) =>
+			this.handlePreviewMessage(event),
+		);
 		await this.plugin.safe(() => this.plugin.recover());
 		this.bind(this.plugin.record());
 	}
@@ -84,7 +87,38 @@ class PublisherView extends ItemView {
 		this.control.invalidate();
 		await this.plugin.closeClient();
 	}
+	handlePreviewMessage(event) {
+		const result = this.frameResult;
+		if (
+			this.closed ||
+			!result ||
+			!this.frame ||
+			event.source !== this.frame.contentWindow ||
+			event.origin !== new URL(result.url).origin ||
+			this.frameGeneration !== this.control.generation ||
+			event.data?.fingerprint !== result.fingerprint
+		)
+			return;
+		if (event.data.type === "blq-preview-scroll") {
+			if (Number.isFinite(event.data.position))
+				this.scrollPosition = event.data.position;
+			return;
+		}
+		if (event.data.type !== "blq-preview-ready") return;
+		this.control.displayed(event.data.fingerprint);
+		this.buttons();
+		this.message(
+			result.issues.some((x) => x.severity === "error")
+				? "预览已显示，请先处理上方问题。"
+				: "预览已就绪，已核对当前文章版本。",
+		);
+		this.frame.contentWindow.postMessage(
+			{ type: "blq-scroll-to", position: this.scrollPosition || 0 },
+			event.origin,
+		);
+	}
 	bind(record) {
+		this.scrollPosition = 0;
 		this.control.bind(record?.id);
 		this.render();
 		if (record) this.changed();
@@ -335,18 +369,14 @@ class PublisherView extends ItemView {
 				cls: "blq-frame",
 				attr: { title: "文章的真实博客预览" },
 			});
+			this.frame = frame;
+			this.frameResult = result;
+			this.frameGeneration = generation;
 			frame.addEventListener("load", () => {
 				if (this.closed || generation !== this.control.generation) return;
-				this.control.displayed(result.fingerprint);
-				this.buttons();
-				this.message(
-					result.issues.some((x) => x.severity === "error")
-						? "预览已显示，请先处理上方问题。"
-						: record.lastPublished &&
-								record.lastPublished.contentFingerprint !==
-									result.contentFingerprint
-							? "预览已更新，文章有待发布的修改。"
-							: "预览已就绪。发布信息只保存在插件中。",
+				frame.contentWindow.postMessage(
+					{ type: "blq-preview-request" },
+					new URL(result.url).origin,
 				);
 			});
 			frame.src = result.url;
@@ -374,21 +404,21 @@ class PublisherView extends ItemView {
 		this.control.publishing = true;
 		this.buttons();
 		try {
-			const result = await this.plugin
-				.getClient()
-				.request(command, {
-					...payload,
-					settings: structuredClone(this.plugin.state.settings),
-				});
+			const result = await this.plugin.getClient().request(command, {
+				...payload,
+				settings: structuredClone(this.plugin.state.settings),
+			});
 			record.operation = result;
 			record.status = result.status;
 			if (result.status === "live")
 				record.lastPublished = {
 					contentFingerprint: result.contentFingerprint,
 					commit: result.commit,
+					updated: result.updated,
 				};
 			if (result.status === "unpublished") record.lastPublished = null;
 			await this.plugin.save();
+			this.control.publishing = false;
 			this.render();
 			this.message(result.error || labels[result.status]);
 			new Notice(result.error || labels[result.status], 8000);

@@ -1,8 +1,9 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { test } from "node:test";
 import { temporary } from "./fixtures.mjs";
+
 let engine = {};
 try {
 	engine = await import("../../scripts/obsidian-publisher/workspace.mjs");
@@ -11,9 +12,9 @@ try {
 }
 test("workspace mirrors theme, excludes private folders, cleans stale files and never writes source", async (t) => {
 	assert.equal(typeof engine.syncWorkspace, "function");
-	const root = await temporary(t),
-		repo = path.join(root, "repo"),
-		dest = path.join(repo, "cache/preview");
+	const root = await temporary(t);
+	const repo = path.join(root, "repo");
+	const dest = path.join(repo, "cache/preview");
 	for (const [name, value] of Object.entries({
 		"src/config/theme.ts": "blue",
 		"public/a.txt": "asset",

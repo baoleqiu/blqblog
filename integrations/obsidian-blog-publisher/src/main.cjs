@@ -71,6 +71,16 @@ module.exports = class BlogPublisher extends Plugin {
 				if (this.view() && this.record()) this.invalidate();
 			}),
 		);
+		this.app.workspace.onLayoutReady(() => {
+			model.reconcileSources(
+				this.state,
+				(sourcePath) =>
+					this.app.vault.getAbstractFileByPath(sourcePath) instanceof TFile,
+			);
+			this.safe(() => this.save());
+			this.view()?.render();
+			this.invalidate();
+		});
 	}
 	async safe(fn) {
 		try {
@@ -145,14 +155,12 @@ module.exports = class BlogPublisher extends Plugin {
 				markdown = leaf.view.editor.getValue();
 		});
 		markdown ??= await this.app.vault.read(file);
-		const resolutions = {},
-			cache = this.app.metadataCache.getFileCache(file),
-			targets = new Set([
-				record.metadata.cover,
-				...[...(cache?.links || []), ...(cache?.embeds || [])].map(
-					(x) => x.link,
-				),
-			]);
+		const resolutions = {};
+		const cache = this.app.metadataCache.getFileCache(file);
+		const targets = new Set([
+			record.metadata.cover,
+			...[...(cache?.links || []), ...(cache?.embeds || [])].map((x) => x.link),
+		]);
 		for (const match of markdown.matchAll(/!?\[\[([^\]\r\n]+)\]\]/g))
 			targets.add(match[1].split("|")[0]);
 		for (const match of markdown.matchAll(
@@ -192,6 +200,7 @@ module.exports = class BlogPublisher extends Plugin {
 			vaultRoot: this.app.vault.adapter.getBasePath(),
 			markdown,
 			metadata: structuredClone(record.metadata),
+			lastPublished: structuredClone(record.lastPublished),
 			resolutions,
 			publishedLinks,
 		};
@@ -213,6 +222,7 @@ module.exports = class BlogPublisher extends Plugin {
 				record.lastPublished = {
 					contentFingerprint: op.contentFingerprint,
 					commit: op.commit,
+					updated: op.updated,
 				};
 			if (op.status === "unpublished") record.lastPublished = null;
 		}

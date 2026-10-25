@@ -2,9 +2,9 @@
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 16px !important;
+	padding: 16px;
 	height: 100%;
-	overflow: auto !important;
+	overflow: auto;
 }
 .blq-header h2 {
 	font-size: 1.35em;
@@ -33,7 +33,7 @@
 	margin: 8px 0;
 }
 .blq-error {
-	color: var(--text-error) !important;
+	color: var(--text-error);
 }
 .blq-fields {
 	border: 1px solid var(--background-modifier-border);

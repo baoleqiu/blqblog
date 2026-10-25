@@ -18,6 +18,25 @@ function fresh() {
 		siteUrl: "https://example.test",
 	});
 }
+test("startup detects an offline move without reassigning or deleting the published article", () => {
+	const state = fresh();
+	const record = model.bindNote(state, {
+		path: "old/note.md",
+		basename: "Note",
+	});
+	record.status = "live";
+	record.lastPublished = { commit: "abc" };
+	const id = record.id;
+	assert.equal(typeof model.reconcileSources, "function");
+	model.reconcileSources(state, (path) => path === "new/note.md");
+	assert.equal(record.sourceMissing, true);
+	assert.equal(record.id, id);
+	assert.equal(record.status, "live");
+	assert.equal(record.sourcePath, "old/note.md");
+	model.relinkSource(state, id, "new/note.md");
+	assert.equal(record.sourceMissing, false);
+	assert.equal(record.id, id);
+});
 
 test("reopening and renaming a note keeps its article identity and public URL", () => {
 	const state = fresh();
