@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { test } from "node:test";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
 import { fixtureImage, note, temporary } from "./fixtures.mjs";
@@ -18,6 +19,48 @@ async function convert(snapshot) {
 	);
 	return converter.convertNote(snapshot);
 }
+
+test("wiki and Markdown MP4 embeds become controlled video players with one shared original", async (t) => {
+	const dir = await temporary(t);
+	const video = path.join(dir, "旅行 视频.MP4");
+	const bytes = Buffer.from("mp4-copy-fixture");
+	await fs.writeFile(video, bytes);
+	const source = note(
+		"![[旅行 视频.MP4|480]]\n\n![旅途](旅行%20视频.MP4)\n\n![[旅行 视频.MP4|640x360]]\n\n`![[不导出.mp4]]`",
+		{
+			vaultRoot: dir,
+			resolutions: { "旅行 视频.MP4": { path: video, kind: "video" } },
+		},
+	);
+	const result = await convert(source);
+	assert.equal(result.issues.length, 0);
+	assert.equal(result.assets.length, 1);
+	assert.equal((result.markdown.match(/<video /g) || []).length, 3);
+	assert.match(result.markdown, /controls playsinline preload="metadata"/);
+	assert.match(result.markdown, /width="480"/);
+	assert.match(result.markdown, /width="640" height="360"/);
+	assert.ok(!result.markdown.includes("autoplay"));
+	assert.ok(!result.markdown.includes("<img"));
+	assert.ok(result.markdown.includes("`![[不导出.mp4]]`"));
+	assert.deepEqual(
+		result.files[`public${result.assets[0].originalUrl}`],
+		bytes,
+	);
+	const covered = await convert({
+		...source,
+		metadata: { ...source.metadata, cover: "旅行 视频.MP4" },
+	});
+	assert.ok(covered.issues.some((i) => i.severity === "error"));
+});
+
+test("missing MP4 files still block publication", async () => {
+	const result = await convert(note("![[missing.mp4]]"));
+	assert.ok(
+		result.issues.some(
+			(i) => i.code === "missing-asset" && i.severity === "error",
+		),
+	);
+});
 
 test("plain prose, tables, nested lists, unicode and callouts retain original body characters", async () => {
 	const body =

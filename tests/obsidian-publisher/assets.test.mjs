@@ -20,6 +20,52 @@ async function prepare(args) {
 	return assets.prepareImage(args);
 }
 
+test("MP4 originals are copied byte-for-byte and content changes change their URL", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = path.join(dir, "旅行.MP4");
+	const before = Buffer.from("mp4-copy-fixture-one");
+	await fs.writeFile(sourcePath, before);
+	assert.equal(typeof assets.prepareVideo, "function");
+	const args = { sourcePath, vaultRoot: dir, id: "test-article-1234" };
+	const first = await assets.prepareVideo(args);
+	assert.equal(first.kind, "video");
+	assert.match(first.originalUrl, /\/originals\/[a-f0-9]+\.mp4$/);
+	assert.deepEqual(first.files[`public${first.originalUrl}`], before);
+	assert.equal(Object.keys(first.files).length, 1);
+	assert.deepEqual(await fs.readFile(sourcePath), before);
+	await fs.writeFile(sourcePath, "mp4-copy-fixture-two");
+	assert.notEqual(
+		(await assets.prepareVideo(args)).originalUrl,
+		first.originalUrl,
+	);
+});
+
+test("video export rejects files outside the vault and files above the GitHub size limit", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = path.join(dir, "large.mp4");
+	await fs.writeFile(sourcePath, "");
+	const handle = await fs.open(sourcePath, "r+");
+	await handle.truncate(100 * 1024 * 1024 + 1);
+	await handle.close();
+	assert.equal(typeof assets.prepareVideo, "function");
+	await assert.rejects(
+		() =>
+			assets.prepareVideo({
+				sourcePath,
+				vaultRoot: dir,
+				id: "test-article-1234",
+			}),
+		/100 MiB/,
+	);
+	const vaultRoot = path.join(dir, "vault");
+	await fs.mkdir(vaultRoot);
+	await assert.rejects(
+		() =>
+			assets.prepareVideo({ sourcePath, vaultRoot, id: "test-article-1234" }),
+		/越界/,
+	);
+});
+
 test("small images are served unchanged without an extra display file", async (t) => {
 	const dir = await temporary(t);
 	const sourcePath = await fixtureImage(dir);

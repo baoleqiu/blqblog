@@ -30,6 +30,8 @@ const candidate = {
 		"src/content/posts/obsidian/test-article-1234/index.md": "public-body",
 		"public/obsidian-published/test-article-1234/originals/one.png":
 			Buffer.from("image"),
+		"public/obsidian-published/test-article-1234/originals/video.mp4":
+			Buffer.from([0, 0, 0, 24, 102, 116, 121, 112, 255, 0, 128]),
 	},
 };
 async function setup(t, options = {}) {
@@ -158,6 +160,11 @@ test("hand-edited owned output is not overwritten; unpublish and restore retain 
 	const { repo, git, publisher } = await setup(t);
 	await publisher.publish(candidate, settings);
 	const file = path.join(repo, Object.keys(candidate.files)[0]);
+	const videoKey = Object.keys(candidate.files).find((name) =>
+		name.endsWith(".mp4"),
+	);
+	const videoFile = path.join(repo, videoKey);
+	assert.deepEqual(await fs.readFile(videoFile), candidate.files[videoKey]);
 	await fs.writeFile(file, "manual");
 	await assert.rejects(
 		publisher.publish({ ...candidate, contentFingerprint: "second" }, settings),
@@ -167,7 +174,9 @@ test("hand-edited owned output is not overwritten; unpublish and restore retain 
 	const down = await publisher.unpublish(candidate.id, settings);
 	assert.equal(down.action, "unpublish");
 	await assert.rejects(fs.access(file));
+	await assert.rejects(fs.access(videoFile));
 	await publisher.publish(candidate, settings);
+	assert.deepEqual(await fs.readFile(videoFile), candidate.files[videoKey]);
 	assert.equal(await fs.readFile(file, "utf8"), "public-body");
 	assert.ok((await git("log", "--oneline")).split("\n").length >= 4);
 });

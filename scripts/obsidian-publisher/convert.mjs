@@ -7,7 +7,7 @@ import katex from "katex";
 import remarkMath from "remark-math";
 import "katex/dist/contrib/mhchem.mjs";
 import model from "../../integrations/obsidian-blog-publisher/src/model.cjs";
-import { prepareImage } from "./assets.mjs";
+import { prepareImage, prepareVideo } from "./assets.mjs";
 import { hash, html, validateId, validateMetadata } from "./common.mjs";
 
 const markdownText = (text) => String(text).replace(/[\\`*_[\]<>]/g, "\\$&");
@@ -127,15 +127,20 @@ export async function convertNote(snapshot) {
 	const resolve = (target) =>
 		snapshot.resolutions?.[decode(target)] || snapshot.resolutions?.[target];
 	const exported = new Map();
-	async function exportImage(target, offset) {
+	async function exportAsset(target, offset, allowVideo = false) {
 		const resolution = resolve(target);
 		if (!resolution?.path) {
 			issue("error", "missing-asset", `找不到附件：${target}`, offset);
 			return null;
 		}
+		const video = path.extname(resolution.path).toLowerCase() === ".mp4";
+		if (video && !allowVideo) {
+			issue("error", "asset", "封面需要图片，不能使用 MP4 视频。", offset);
+			return null;
+		}
 		if (exported.has(resolution.path)) return exported.get(resolution.path);
 		try {
-			const asset = await prepareImage({
+			const asset = await (video ? prepareVideo : prepareImage)({
 				sourcePath: resolution.path,
 				vaultRoot: snapshot.vaultRoot,
 				id: snapshot.id,
@@ -151,11 +156,17 @@ export async function convertNote(snapshot) {
 			return null;
 		}
 	}
-	async function imageMarkup(target, alt, size, offset) {
+	async function mediaMarkup(target, alt, size, offset) {
 		if (/^https?:\/\//i.test(target)) return null;
-		const asset = await exportImage(target, offset);
+		const asset = await exportAsset(target, offset, true);
 		if (!asset) return null;
 		const requested = /^(\d+)(?:x(\d+))?$/.exec(size || "");
+		if (asset.kind === "video") {
+			const dimensions = requested
+				? ` width="${Math.min(10000, Math.max(1, +requested[1]))}"${requested[2] ? ` height="${Math.min(10000, Math.max(1, +requested[2]))}"` : ""}`
+				: "";
+			return `<video class="blq-video" src="${asset.originalUrl}" controls playsinline preload="metadata" aria-label="${html(alt || "视频")}"${dimensions}><a href="${asset.originalUrl}" target="_blank" rel="noopener noreferrer">打开原视频</a></video>`;
+		}
 		const width = requested
 			? Math.min(10000, Math.max(1, +requested[1]))
 			: asset.width;
@@ -172,7 +183,7 @@ export async function convertNote(snapshot) {
 			issue("error", "missing-asset", "图片引用没有对应的链接定义。", start);
 			continue;
 		}
-		const replacement = await imageMarkup(target, node.alt || "", "", start);
+		const replacement = await mediaMarkup(target, node.alt || "", "", start);
 		if (replacement) edits.push({ start, end, text: replacement });
 		protectedRanges.push([start, end]);
 	}
@@ -198,7 +209,7 @@ export async function convertNote(snapshot) {
 				);
 				continue;
 			}
-			const replacement = await imageMarkup(
+			const replacement = await mediaMarkup(
 				target,
 				/^\d+(x\d+)?$/.test(alias) ? "" : alias,
 				alias,
@@ -246,7 +257,7 @@ export async function convertNote(snapshot) {
 	let image = "";
 	if (metadata.cover) {
 		if (/^https?:\/\//i.test(metadata.cover)) image = metadata.cover;
-		else image = (await exportImage(metadata.cover, 0))?.displayUrl || "";
+		else image = (await exportAsset(metadata.cover, 0))?.displayUrl || "";
 	}
 	let converted = body;
 	for (const edit of edits.sort((a, b) => b.start - a.start))

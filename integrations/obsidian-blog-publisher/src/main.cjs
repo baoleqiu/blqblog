@@ -185,7 +185,12 @@ module.exports = class BlogPublisher extends Plugin {
 				resolutions[target] = {
 					path: path.join(this.app.vault.adapter.getBasePath(), resolved.path),
 					notePath: resolved.path,
-					kind: resolved.extension === "md" ? "note" : "image",
+					kind:
+						resolved.extension === "md"
+							? "note"
+							: resolved.extension.toLowerCase() === "mp4"
+								? "video"
+								: "image",
 				};
 			}
 		}

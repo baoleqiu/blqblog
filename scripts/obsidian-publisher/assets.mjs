@@ -3,6 +3,33 @@ import path from "node:path";
 import sharp from "sharp";
 import { assertInside, hash, validateId } from "./common.mjs";
 
+export async function prepareVideo({ sourcePath, vaultRoot, id }) {
+	validateId(id);
+	const root = await fs.realpath(vaultRoot);
+	const source = await fs.realpath(sourcePath);
+	assertInside(root, source);
+	if (path.extname(source).toLowerCase() !== ".mp4")
+		throw Error("目前支持 MP4 视频。");
+	const limit = 100 * 1024 * 1024;
+	const sizeError = () =>
+		Error(
+			"视频超过 GitHub 普通文件的 100 MiB 限制，请先缩小视频或使用外部视频链接。",
+		);
+	if ((await fs.stat(source)).size > limit) throw sizeError();
+	const bytes = await fs.readFile(source);
+	if (bytes.length > limit) throw sizeError();
+	const digest = hash(bytes);
+	const originalUrl = `/obsidian-published/${id}/originals/${digest}.mp4`;
+	return {
+		kind: "video",
+		originalUrl,
+		displayUrl: originalUrl,
+		files: { [`public${originalUrl}`]: bytes },
+		hash: digest,
+		sourcePath: source,
+	};
+}
+
 export async function prepareImage({ sourcePath, vaultRoot, id }) {
 	validateId(id);
 	const root = await fs.realpath(vaultRoot);

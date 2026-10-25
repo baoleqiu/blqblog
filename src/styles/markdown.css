@@ -3,6 +3,17 @@
 .custom-md {
   overflow-wrap: break-word;
 
+  .blq-video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+  }
+
+  .blq-video:not([width]) {
+    width: 100%;
+  }
+
   /* Obsidian 导入图片的对齐由博客控制，不依赖笔记库的 CSS。 */
   img[src^="/obsidian-published/"] {
     display: block;
