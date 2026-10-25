@@ -19,6 +19,86 @@ async function prepare(args) {
 	);
 	return assets.prepareImage(args);
 }
+
+test("small images are served unchanged without an extra display file", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = await fixtureImage(dir);
+	const result = await prepare({
+		sourcePath,
+		vaultRoot: dir,
+		id: "test-article-1234",
+	});
+	assert.equal(result.displayUrl, result.originalUrl);
+	assert.equal(Object.keys(result.files).length, 1);
+});
+
+test("large images use a smaller display copy while retaining the original", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = path.join(dir, "large.png");
+	await sharp({
+		create: { width: 3000, height: 2000, channels: 3, background: "red" },
+	})
+		.png()
+		.toFile(sourcePath);
+	const result = await prepare({
+		sourcePath,
+		vaultRoot: dir,
+		id: "test-article-1234",
+	});
+	assert.notEqual(result.displayUrl, result.originalUrl);
+	assert.ok(
+		result.files[`public${result.displayUrl}`].length <
+			result.files[`public${result.originalUrl}`].length,
+	);
+	assert.equal(result.width, 1920);
+	assert.equal(result.height, 1280);
+	assert.deepEqual(
+		result.files[`public${result.originalUrl}`],
+		await fs.readFile(sourcePath),
+	);
+});
+
+test("an efficient large original is retained when conversion would increase download size", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = path.join(dir, "efficient.avif");
+	await sharp({
+		create: { width: 2400, height: 1600, channels: 3, background: "red" },
+	})
+		.avif({ quality: 30 })
+		.toFile(sourcePath);
+	const result = await prepare({
+		sourcePath,
+		vaultRoot: dir,
+		id: "test-article-1234",
+	});
+	assert.equal(result.displayUrl, result.originalUrl);
+	assert.equal(Object.keys(result.files).length, 1);
+	assert.equal(result.width, 2400);
+	assert.equal(result.height, 1600);
+});
+
+test("original fallback reports the displayed dimensions of an EXIF-rotated photo", async (t) => {
+	const dir = await temporary(t);
+	const sourcePath = path.join(dir, "rotated.jpg");
+	await sharp({
+		create: { width: 80, height: 40, channels: 3, background: "red" },
+	})
+		.withMetadata({ orientation: 6 })
+		.jpeg()
+		.toFile(sourcePath);
+	const result = await prepare({
+		sourcePath,
+		vaultRoot: dir,
+		id: "test-article-1234",
+	});
+	assert.equal(result.displayUrl, result.originalUrl);
+	assert.equal(result.width, 40);
+	assert.equal(result.height, 80);
+	assert.deepEqual(
+		result.files[`public${result.displayUrl}`],
+		await fs.readFile(sourcePath),
+	);
+});
 test("original bytes are preserved while small transparent images are not enlarged", async (t) => {
 	const dir = await temporary(t);
 	const sourcePath = await fixtureImage(dir);

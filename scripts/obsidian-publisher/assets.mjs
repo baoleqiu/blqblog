@@ -19,10 +19,11 @@ export async function prepareImage({ sourcePath, vaultRoot, id }) {
 	const originalUrl = `/obsidian-published/${id}/originals/${digest}.${extension}`;
 	const files = { [`public${originalUrl}`]: bytes };
 	let displayUrl = originalUrl;
-	let width = metadata.width;
-	let height = metadata.height;
-	if (extension !== "gif") {
-		displayUrl = `/obsidian-published/${id}/display/${digest}.webp`;
+	const rotated = [5, 6, 7, 8].includes(metadata.orientation);
+	let width = rotated ? metadata.height : metadata.width;
+	let height = rotated ? metadata.width : metadata.height;
+	const small = bytes.length <= 300 * 1024 && Math.max(width, height) <= 1920;
+	if (extension !== "gif" && !small) {
 		const result = await sharp(bytes)
 			.rotate()
 			.resize({
@@ -33,9 +34,12 @@ export async function prepareImage({ sourcePath, vaultRoot, id }) {
 			})
 			.webp({ quality: 90, lossless: extension === "png" || metadata.hasAlpha })
 			.toBuffer({ resolveWithObject: true });
-		files[`public${displayUrl}`] = result.data;
-		width = result.info.width;
-		height = result.info.height;
+		if (result.data.length < bytes.length) {
+			displayUrl = `/obsidian-published/${id}/display/${digest}.webp`;
+			files[`public${displayUrl}`] = result.data;
+			width = result.info.width;
+			height = result.info.height;
+		}
 	}
 	return {
 		originalUrl,
