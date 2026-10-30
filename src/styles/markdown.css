@@ -37,6 +37,10 @@
     }
   }
 
+  figure:has(.blq-lightbox) figcaption {
+    text-align: center;
+  }
+
   body.sticky-navbar & {
     [id] {
       scroll-margin-top: 5.5rem;

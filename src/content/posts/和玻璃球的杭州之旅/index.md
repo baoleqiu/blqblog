@@ -17,7 +17,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![云栖竹径](./photos/云栖竹径.jpg)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/b674ed03ccff02ee4249c945df24fae802e0e463dfe912b0bca1b5d0d0eaca40.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：云栖竹径"><img class="blq-image" src="/obsidian-published/legacy-images/originals/b674ed03ccff02ee4249c945df24fae802e0e463dfe912b0bca1b5d0d0eaca40.jpg" alt="云栖竹径" width="1280" height="2160" loading="lazy" decoding="async"></a><figcaption>云栖竹径</figcaption></figure>
 
 </div>
 
@@ -25,7 +25,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![400天合照](./photos/400天合照.png)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/016c976fe7206cfda134263853ddca2c89db4bb2ed9bc8da365cecaba97b25cd.png" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：400天合照"><img class="blq-image" src="/obsidian-published/legacy-images/display/016c976fe7206cfda134263853ddca2c89db4bb2ed9bc8da365cecaba97b25cd.webp" alt="400天合照" width="1920" height="1082" loading="lazy" decoding="async"></a><figcaption>400天合照</figcaption></figure>
 
 </div>
 
@@ -34,7 +34,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![西湖划船最喜欢的侧脸](./photos/西湖划船最喜欢的侧脸.jpg)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/8580b2ae6ac1aed5ea21c6be4c0391aab5603561ca1e092f559111335db78a41.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：西湖划船最喜欢的侧脸"><img class="blq-image" src="/obsidian-published/legacy-images/originals/8580b2ae6ac1aed5ea21c6be4c0391aab5603561ca1e092f559111335db78a41.jpg" alt="西湖划船最喜欢的侧脸" width="1280" height="1707" loading="lazy" decoding="async"></a><figcaption>西湖划船最喜欢的侧脸</figcaption></figure>
 
 </div>
 
@@ -42,7 +42,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![山竹冰饮品](./photos/山竹冰饮品.jpg)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/6bd2ed44159394db89746f6ee23ef59f5aed6686b7a36290bdb1e5d00a93e4f2.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：山竹冰饮品"><img class="blq-image" src="/obsidian-published/legacy-images/originals/6bd2ed44159394db89746f6ee23ef59f5aed6686b7a36290bdb1e5d00a93e4f2.jpg" alt="山竹冰饮品" width="1279" height="1706" loading="lazy" decoding="async"></a><figcaption>山竹冰饮品</figcaption></figure>
 
 </div>
 
@@ -50,7 +50,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![灵隐寺大门](./photos/灵隐寺大门.jpg)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/30978d87af11c5b0dfa8378be3a0d42e35e5aa9fce7bdd030dbbf13bb9d8fac9.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：灵隐寺大门"><img class="blq-image" src="/obsidian-published/legacy-images/originals/30978d87af11c5b0dfa8378be3a0d42e35e5aa9fce7bdd030dbbf13bb9d8fac9.jpg" alt="灵隐寺大门" width="1280" height="1280" loading="lazy" decoding="async"></a><figcaption>灵隐寺大门</figcaption></figure>
 
 </div>
 
@@ -59,7 +59,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![虎跑公园](./photos/虎跑公园.jpg)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/b9e10e9087e91f97e4ed75ae76c4afcf610e35661d0011ff209321403c18b4d6.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：虎跑公园"><img class="blq-image" src="/obsidian-published/legacy-images/originals/b9e10e9087e91f97e4ed75ae76c4afcf610e35661d0011ff209321403c18b4d6.jpg" alt="虎跑公园" width="1688" height="950" loading="lazy" decoding="async"></a><figcaption>虎跑公园</figcaption></figure>
 
 </div>
 
@@ -67,7 +67,7 @@ passwordHint: "🎂"
 
 <div style="width: 60%; margin: 0 auto;">
 
-![脂女团合照](./photos/脂女团合照.png)
+<figure><a class="blq-lightbox no-styling" href="/obsidian-published/legacy-images/originals/8c9cceac84be96d05be7a5e672cd605b36f6f778e867a1670e76120af2c53480.png" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：脂女团合照"><img class="blq-image" src="/obsidian-published/legacy-images/display/8c9cceac84be96d05be7a5e672cd605b36f6f778e867a1670e76120af2c53480.webp" alt="脂女团合照" width="1920" height="1080" loading="lazy" decoding="async"></a><figcaption>脂女团合照</figcaption></figure>
 
 </div>
 
