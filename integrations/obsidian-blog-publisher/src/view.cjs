@@ -4,6 +4,8 @@ const {
 	Notice,
 	FuzzySuggestModal,
 	Modal,
+	Menu,
+	setIcon,
 } = require("obsidian");
 const { PreviewController } = require("./controller.cjs");
 const model = require("./model.cjs");
@@ -67,6 +69,7 @@ class PublisherView extends ItemView {
 		this.refreshing = false;
 		this.refreshAfterBusy = false;
 		this.closed = false;
+		this.metadataOpen = false;
 	}
 	getViewType() {
 		return VIEW_TYPE;
@@ -118,7 +121,7 @@ class PublisherView extends ItemView {
 		this.buttons();
 		this.message(
 			result.issues.some((x) => x.severity === "error")
-				? "预览已显示，请先处理上方问题。"
+				? "预览已显示，请先处理标出的问题。"
 				: "预览已就绪，已核对当前文章版本。",
 		);
 		this.frame.contentWindow.postMessage(
@@ -138,83 +141,182 @@ class PublisherView extends ItemView {
 	}
 	message(text, error = false) {
 		if (this.statusEl) {
-			this.statusEl.setText(text);
+			this.statusText.setText(text);
 			this.statusEl.toggleClass("blq-error", error);
+			setIcon(this.statusIcon, error ? "circle-alert" : "info");
 		}
+	}
+	chooseNote(record) {
+		if (this.control.publishing) return;
+		new FilePicker(
+			this.app,
+			(f) => f.extension === "md",
+			(file) =>
+				this.plugin.safe(async () => {
+					if (this.control.publishing) return;
+					if (record) {
+						if (this.plugin.record()?.id !== record.id) return;
+						model.relinkSource(this.plugin.state, record.id, file.path);
+						await this.plugin.save();
+						this.bind(record);
+					} else await this.plugin.bind(file);
+				}),
+		).open();
+	}
+	showMenu(event) {
+		const record = this.plugin.record();
+		const menu = new Menu();
+		menu.addItem((item) =>
+			item
+				.setTitle("绑定当前笔记")
+				.setIcon("file-plus")
+				.setDisabled(this.control.publishing)
+				.onClick(() =>
+					this.plugin.safe(() =>
+						this.plugin.bind(
+							this.app.workspace.getActiveFile() || this.plugin.lastMarkdown,
+						),
+					),
+				),
+		);
+		menu.addItem((item) =>
+			item
+				.setTitle("选择其他笔记")
+				.setIcon("files")
+				.setDisabled(this.control.publishing)
+				.onClick(() => this.chooseNote()),
+		);
+		if (record?.lastPublished && record.status !== "unpublished") {
+			menu.addSeparator();
+			menu.addItem((item) =>
+				item
+					.setTitle("下架文章…")
+					.setIcon("archive")
+					.setDisabled(this.control.publishing)
+					.onClick(() => {
+						if (
+							this.control.publishing ||
+							this.plugin.record()?.id !== record.id
+						)
+							return;
+						new Confirm(
+							this.app,
+							"下架这篇博客文章",
+							`将从网站移除《${record.metadata.title}》。原笔记、发布信息和 Git 历史保留，可重新发布。`,
+							() =>
+								this.plugin.safe(() => {
+									if (this.plugin.record()?.id !== record.id)
+										throw Error("文章已切换，请重新确认下架目标。");
+									return this.operation("unpublish", { id: record.id });
+								}),
+						).open();
+					}),
+			);
+		}
+		menu.showAtMouseEvent(event);
+	}
+	updateMetadataSummary(record) {
+		this.metadataSummary?.setText(
+			[
+				record.metadata.category || "未分类",
+				`${record.metadata.tags.length} 个标签`,
+				record.metadata.published || "日期自动填写",
+			].join(" · "),
+		);
 	}
 	render() {
 		this.control.invalidate();
 		this.frame = null;
 		this.frameResult = null;
+		this.publishButton = null;
+		this.refreshButton = null;
+		this.browserButton = null;
+		this.footerStatus = null;
+		this.metadataSummary = null;
+		this.editControls = [];
 		const el = this.contentEl;
 		el.empty();
 		el.addClass("blq-publisher");
 		const record = this.plugin.record();
 		const header = el.createDiv({ cls: "blq-header" });
+		setIcon(header.createSpan({ cls: "blq-brand-icon" }), "send");
 		header.createEl("h2", { text: "博客工作台" });
-		const tools = header.createDiv({ cls: "blq-actions" });
-		this.button(tools, "绑定当前笔记", () =>
-			this.plugin.bind(
-				this.app.workspace.getActiveFile() || this.plugin.lastMarkdown,
-			),
-		);
-		this.button(tools, "选择笔记", () =>
-			new FilePicker(
-				this.app,
-				(f) => f.extension === "md",
-				(file) => this.plugin.safe(() => this.plugin.bind(file)),
-			).open(),
-		);
-		const records = header.createEl("select", {
+		const more = header.createEl("button", {
+			cls: "blq-more clickable-icon",
+			attr: { "aria-label": "更多操作", "aria-haspopup": "menu" },
+		});
+		setIcon(more, "ellipsis");
+		more.addEventListener("click", (event) => this.showMenu(event));
+		const body = el.createDiv({ cls: "blq-body" });
+		const selection = body.createDiv({ cls: "blq-selection" });
+		const records = selection.createEl("select", {
 			attr: { "aria-label": "发布记录" },
 		});
+		this.editControls.push(records);
 		records.createEl("option", { text: "选择发布记录", value: "" });
 		for (const item of this.plugin.state.records)
 			records.createEl("option", {
-				text: `${item.metadata.title} · ${item.sourceMissing ? "原笔记缺失" : labels[item.status] || item.status}`,
+				text: item.metadata.title,
 				value: item.id,
 			});
 		records.value = record?.id || "";
 		records.addEventListener("change", () =>
 			this.plugin.safe(async () => {
-				if (!records.value) return;
+				if (!records.value || this.control.publishing) return;
 				this.plugin.state.settings.lastRecordId = records.value;
 				await this.plugin.save();
 				this.bind(this.plugin.record());
 			}),
 		);
-		this.statusEl = header.createEl("p", {
+		if (record)
+			selection.createSpan({
+				cls: "blq-state",
+				text: record.sourceMissing
+					? "原笔记缺失"
+					: labels[record.status] || record.status,
+			});
+		this.statusEl = body.createDiv({
 			cls: "blq-status",
-			attr: { role: "status" },
+			attr: { role: "status", "aria-live": "polite", "aria-atomic": "true" },
 		});
+		this.statusIcon = this.statusEl.createSpan({
+			cls: "blq-status-icon",
+			attr: { "aria-hidden": "true" },
+		});
+		this.statusText = this.statusEl.createSpan();
 		if (!record) {
+			const empty = body.createDiv({ cls: "blq-empty" });
+			setIcon(empty.createSpan({ cls: "blq-empty-icon" }), "file-text");
+			empty.createEl("h3", { text: "把笔记变成一篇博客" });
+			empty.createEl("p", { text: "选择笔记，在这里预览和发布。" });
+			this.button(empty, "选择笔记", () => this.chooseNote());
 			this.message("选择一篇笔记，开始预览。");
 			return;
 		}
 		this.control.id = record.id;
 		this.control.missing = record.sourceMissing;
-		header.createEl("p", {
-			text: `当前固定预览：${record.sourcePath}`,
+		const source = body.createDiv({ cls: "blq-source-row" });
+		source.createEl("p", {
+			text: `原笔记：${record.sourcePath}`,
 			cls: "blq-source",
+			attr: { title: record.sourcePath },
 		});
-		if (record.sourceMissing) {
-			this.message("原笔记缺失，已发布文章仍保留。", true);
-			this.button(header, "重新关联笔记", () =>
-				new FilePicker(
-					this.app,
-					(f) => f.extension === "md",
-					(file) =>
-						this.plugin.safe(async () => {
-							model.relinkSource(this.plugin.state, record.id, file.path);
-							await this.plugin.save();
-							this.bind(record);
-						}),
-				).open(),
-			);
-		}
-		const fields = el.createEl("details", { cls: "blq-fields" });
-		fields.open = true;
-		fields.createEl("summary", { text: "发布信息" });
+		const choose = this.button(
+			source,
+			record.sourceMissing ? "重新关联笔记" : "更换笔记",
+			() => this.chooseNote(record.sourceMissing ? record : null),
+		);
+		choose.addClass("blq-text-button");
+		this.editControls.push(choose);
+		const fields = body.createEl("details", { cls: "blq-fields" });
+		fields.open = this.metadataOpen;
+		fields.addEventListener("toggle", () => {
+			this.metadataOpen = fields.open;
+		});
+		const summary = fields.createEl("summary");
+		summary.createSpan({ text: "发布信息", cls: "blq-fields-title" });
+		this.metadataSummary = summary.createSpan({ cls: "blq-metadata-summary" });
+		this.updateMetadataSummary(record);
 		const grid = fields.createDiv({ cls: "blq-field-grid" });
 		for (const [key, label, type] of [
 			["title", "博客标题", "text"],
@@ -235,12 +337,15 @@ class PublisherView extends ItemView {
 					: record.metadata[key] || "";
 			input.setAttribute("data-field", key);
 			input.disabled = this.control.publishing;
+			this.editControls.push(input);
 			if (key === "published") input.setAttribute("max", model.today());
 			input.addEventListener("input", () => {
+				if (this.control.publishing) return;
 				model.updateMetadata(record, {
 					[key]: key === "tags" ? input.value.split(/[,，\n]/) : input.value,
 				});
 				this.plugin.safe(() => this.plugin.save());
+				this.updateMetadataSummary(record);
 				this.changed();
 			});
 			if (key === "category" || key === "tags") {
@@ -259,67 +364,90 @@ class PublisherView extends ItemView {
 		}
 		const cover = fields.createDiv({ cls: "blq-cover" });
 		cover.createSpan({ text: `封面：${record.metadata.cover || "未设置"}` });
-		this.button(cover, "选择封面", () =>
-			new FilePicker(
-				this.app,
-				(f) => /^(jpg|jpeg|png|webp|gif|avif)$/i.test(f.extension),
-				(file) =>
-					this.plugin.safe(async () => {
-						model.updateMetadata(record, { cover: file.path });
-						await this.plugin.save();
-						this.render();
-						this.changed();
-					}),
-			).open(),
+		this.editControls.push(
+			this.button(cover, "选择封面", () =>
+				new FilePicker(
+					this.app,
+					(f) => /^(jpg|jpeg|png|webp|gif|avif)$/i.test(f.extension),
+					(file) =>
+						this.plugin.safe(async () => {
+							if (
+								this.control.publishing ||
+								this.plugin.record()?.id !== record.id
+							)
+								return;
+							model.updateMetadata(record, { cover: file.path });
+							await this.plugin.save();
+							this.render();
+							this.changed();
+						}),
+				).open(),
+			),
 		);
-		this.button(cover, "清除", async () => {
-			model.updateMetadata(record, { cover: "" });
-			await this.plugin.save();
-			this.render();
-			this.changed();
-		});
-		const bar = el.createDiv({ cls: "blq-actions" });
+		this.editControls.push(
+			this.button(cover, "清除", async () => {
+				if (this.control.publishing) return;
+				model.updateMetadata(record, { cover: "" });
+				await this.plugin.save();
+				this.render();
+				this.changed();
+			}),
+		);
+		const bar = body.createDiv({ cls: "blq-preview-toolbar" });
+		bar.createSpan({ text: "博客预览", cls: "blq-section-title" });
 		this.refreshButton = this.button(bar, "刷新预览", () => this.refresh());
-		this.button(bar, "浏览器打开", () => {
+		this.refreshButton.addClass("blq-text-button");
+		this.browserButton = this.button(bar, "在浏览器预览", () => {
 			if (this.frameResult) window.open(this.frameResult.url, "_blank");
 		});
+		this.browserButton.addClass("blq-browser-button");
+		setIcon(
+			this.browserButton.createSpan({ attr: { "aria-hidden": "true" } }),
+			"external-link",
+		);
+		this.issuesEl = body.createDiv({ cls: "blq-issues" });
+		this.previewEl = body.createDiv({ cls: "blq-preview" });
+		const placeholder = this.previewEl.createDiv({
+			cls: "blq-preview-placeholder",
+		});
+		setIcon(placeholder.createSpan(), "book-open");
+		placeholder.createEl("p", { text: "文章预览将在这里显示" });
+		const footer = el.createDiv({ cls: "blq-footer" });
+		this.footerStatus = footer.createSpan({
+			cls: "blq-footer-status",
+			attr: { role: "status" },
+		});
+		const actions = footer.createDiv({ cls: "blq-actions" });
 		this.publishButton = this.button(
-			bar,
+			actions,
 			record.lastPublished ? "更新文章" : "发布文章",
 			() => this.publish(),
 		);
 		this.publishButton.addClass("mod-cta");
-		if (record.lastPublished && record.status !== "unpublished")
-			this.button(bar, "下架", () =>
-				new Confirm(
-					this.app,
-					"下架这篇博客文章",
-					`将从网站移除《${record.metadata.title}》。原笔记、发布信息和 Git 历史保留，可重新发布。`,
-					() =>
-						this.plugin.safe(() =>
-							this.operation("unpublish", { id: record.id }),
-						),
-				).open(),
-			);
 		if (record.operation) {
-			this.button(
-				bar,
-				record.operation.status === "committed" ||
-					record.operation.status === "prepared"
-					? "继续操作"
-					: "检查上线状态",
-				() =>
-					this.operation(
-						["committed", "prepared"].includes(record.operation.status)
-							? "resume"
-							: "verify",
-						{ operationId: record.operation.operationId },
-					),
+			this.editControls.push(
+				this.button(
+					actions,
+					record.operation.status === "committed" ||
+						record.operation.status === "prepared"
+						? "继续操作"
+						: "检查上线状态",
+					() =>
+						this.operation(
+							["committed", "prepared"].includes(record.operation.status)
+								? "resume"
+								: "verify",
+							{ operationId: record.operation.operationId },
+						),
+				),
 			);
 		}
-		this.issuesEl = el.createDiv({ cls: "blq-issues" });
-		this.previewEl = el.createDiv({ cls: "blq-preview" });
-		this.message(labels[record.status] || "本地草稿");
+		this.message(
+			record.sourceMissing
+				? "原笔记缺失，已发布文章仍保留。"
+				: "预览将在这里更新，发布前会核对文章版本。",
+			Boolean(record.sourceMissing),
+		);
 		this.buttons();
 	}
 	button(parent, text, action) {
@@ -328,7 +456,21 @@ class PublisherView extends ItemView {
 		return button;
 	}
 	buttons() {
+		for (const input of this.editControls || [])
+			input.disabled = this.control.publishing || this.closed;
 		if (this.publishButton) this.publishButton.disabled = !this.control.ready();
+		if (this.browserButton)
+			this.browserButton.disabled = !this.frameResult || this.closed;
+		if (this.footerStatus)
+			this.footerStatus.setText(
+				this.control.publishing
+					? "正在处理发布操作…"
+					: this.control.ready()
+						? "预览已核对，可以发布"
+						: this.control.result?.issues?.some((x) => x.severity === "error")
+							? "请先处理文章中的问题"
+							: "等待最新预览核对",
+			);
 		if (this.refreshButton) {
 			this.refreshButton.disabled =
 				this.refreshing || this.control.publishing || this.closed;
@@ -387,22 +529,34 @@ class PublisherView extends ItemView {
 				await this.plugin.save();
 				const input = this.contentEl.querySelector('[data-field="published"]');
 				if (input) input.value = record.metadata.published;
+				this.updateMetadataSummary(record);
 			}
 			this.issuesEl.empty();
 			for (const issue of result.issues) {
-				const row = this.issuesEl.createEl("p", {
-					text: `${issue.severity === "error" ? "需处理" : "提示"} · 第 ${issue.line} 行：${issue.message}`,
-					cls: issue.severity === "error" ? "blq-error" : "",
+				const row = this.issuesEl.createDiv({
+					cls: issue.severity === "error" ? "blq-issue blq-error" : "blq-issue",
 				});
-				row.addEventListener("click", () =>
-					this.plugin.safe(async () => {
-						const file = this.app.vault.getAbstractFileByPath(
-							record.sourcePath,
-						);
-						const leaf = this.app.workspace.getLeaf(false);
-						await leaf.openFile(file);
-						leaf.view.editor?.setCursor(Math.max(0, issue.line - 1), 0);
+				setIcon(
+					row.createSpan({
+						cls: "blq-issue-icon",
+						attr: { "aria-hidden": "true" },
 					}),
+					issue.severity === "error" ? "circle-alert" : "info",
+				);
+				row.createSpan({
+					text: `${issue.severity === "error" ? "需处理" : "提示"} · 第 ${issue.line} 行：${issue.message}`,
+				});
+				const locate = this.button(row, "查看位置", async () => {
+					const file = this.app.vault.getAbstractFileByPath(record.sourcePath);
+					if (!file) throw Error("原笔记已移走或删除，请重新关联笔记。");
+					const leaf = this.app.workspace.getLeaf(false);
+					await leaf.openFile(file);
+					leaf.view.editor?.setCursor(Math.max(0, issue.line - 1), 0);
+				});
+				locate.addClass("blq-text-button");
+				locate.setAttribute(
+					"aria-label",
+					`查看第 ${issue.line} 行：${issue.message}`,
 				);
 			}
 			this.previewEl.empty();

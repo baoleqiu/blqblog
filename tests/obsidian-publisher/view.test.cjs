@@ -7,11 +7,13 @@ class Element {
 		this.children = [];
 		this.attrs = {};
 		this.disabled = false;
+		this.events = {};
 	}
 	createEl(tag, info = {}) {
 		const el = new Element(tag);
 		el.attrs = info.attr || {};
 		el.textContent = info.text || "";
+		el.className = info.cls || "";
 		this.children.push(el);
 		return el;
 	}
@@ -29,7 +31,9 @@ class Element {
 	setText(text) {
 		this.textContent = text;
 	}
-	addEventListener() {}
+	addEventListener(name, fn) {
+		this.events[name] = fn;
+	}
 	setAttribute(k, v) {
 		this.attrs[k] = v;
 	}
@@ -60,6 +64,8 @@ Module._load = function (name, ...args) {
 			Setting: class {},
 			FuzzySuggestModal: class {},
 			Modal: class {},
+			Menu: class {},
+			setIcon() {},
 		};
 	return originalLoad.call(this, name, ...args);
 };
@@ -313,4 +319,86 @@ test("metadata inputs remain editable after actual view operation completion", a
 	const fields = view.contentEl.querySelectorAll("[data-field]");
 	assert.equal(fields.length, 5);
 	assert.ok(fields.every((x) => !x.disabled));
+});
+
+function descendants(el) {
+	return el.children.flatMap((child) => [child, ...descendants(child)]);
+}
+test("metadata starts collapsed and retains the user's disclosure choice across rerenders", () => {
+	const { view } = previewHarness();
+	let fields = descendants(view.contentEl).find((el) => el.tag === "details");
+	assert.equal(fields.open, false);
+	fields.open = true;
+	fields.events.toggle();
+	view.render();
+	fields = descendants(view.contentEl).find((el) => el.tag === "details");
+	assert.equal(fields.open, true);
+});
+test("browser preview enables only for an available snapshot and resets when the record disappears", async (t) => {
+	const { view, requests, result, plugin } = previewHarness();
+	t.after(() => view.onClose());
+	assert.equal(view.browserButton?.disabled, true);
+	const pending = view.refresh();
+	await settle();
+	requests[0](result);
+	await pending;
+	assert.equal(view.browserButton.disabled, false);
+	assert.equal(
+		view.publishButton.disabled,
+		true,
+		"iframe must still complete its handshake",
+	);
+	view.changed();
+	assert.equal(
+		view.browserButton.disabled,
+		false,
+		"older snapshots remain readable",
+	);
+	plugin.record = () => undefined;
+	view.render();
+	assert.equal(view.frameResult, null);
+	assert.equal(view.publishButton, null);
+	assert.equal(view.browserButton, null);
+});
+test("publication locks record selection and metadata then restores editing", () => {
+	const { view } = previewHarness();
+	view.control.publishing = true;
+	view.buttons();
+	const controls = descendants(view.contentEl).filter(
+		(el) =>
+			el.tag === "select" ||
+			el.attrs["data-field"] ||
+			["选择封面", "清除", "更换笔记"].includes(el.textContent),
+	);
+	assert.ok(controls.length >= 9);
+	assert.ok(controls.every((el) => el.disabled));
+	view.control.publishing = false;
+	view.buttons();
+	assert.ok(controls.every((el) => !el.disabled));
+});
+test("preview issues offer a keyboard-operable button that opens the source line", async (t) => {
+	const { view, requests, result } = previewHarness();
+	t.after(() => view.onClose());
+	const visits = [];
+	view.app = {
+		vault: { getAbstractFileByPath: (path) => ({ path }) },
+		workspace: {
+			getLeaf: () => ({
+				openFile: async (file) => visits.push(file.path),
+				view: { editor: { setCursor: (...cursor) => visits.push(cursor) } },
+			}),
+		},
+	};
+	const pending = view.refresh();
+	await settle();
+	requests[0]({
+		...result,
+		issues: [{ severity: "error", line: 7, message: "图片缺失" }],
+	});
+	await pending;
+	const link = descendants(view.issuesEl).find((el) => el.tag === "button");
+	assert.ok(link, "native buttons support Enter and Space");
+	await link.events.click();
+	assert.deepEqual(visits, ["note.md", [6, 0]]);
+	assert.equal(view.publishButton.disabled, true);
 });
