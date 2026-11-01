@@ -159,7 +159,7 @@ test("editing during generation does not queue builds and shows a snapshot witho
 	assert.equal(requests.length, 1);
 	requests[0](result);
 	await pending;
-	assert.equal(view.frame.src, result.url);
+	assert.equal(view.frameResult.url, result.url);
 	assert.equal(view.control.ready(), false);
 	assert.equal(view.publishButton.disabled, true);
 	t.mock.timers.tick(60000);
@@ -221,7 +221,7 @@ test("binding a note previews immediately and switching during generation runs o
 	);
 	requests[1]({ ...result, url: "http://localhost/next/" });
 	await settle();
-	assert.equal(view.frame.src, "http://localhost/next/");
+	assert.equal(view.frameResult.url, "http://localhost/next/");
 });
 test("normal client cancellation does not overwrite a reopened panel or show a notice", async () => {
 	const plugin = new BlogPublisher();
@@ -279,12 +279,12 @@ test("superseded preview errors stay silent while current preview errors propaga
 	};
 	const view = new PublisherView({}, plugin);
 	const oldRefresh = view.refresh();
-	await Promise.resolve();
+	await settle();
 	view.control.invalidate();
 	rejectPreview(Error("旧预览错误"));
 	await assert.doesNotReject(oldRefresh);
 	const currentRefresh = view.refresh();
-	await Promise.resolve();
+	await settle();
 	rejectPreview(Error("当前预览错误"));
 	await assert.rejects(currentRefresh, /当前预览错误/);
 });
@@ -324,6 +324,52 @@ test("metadata inputs remain editable after actual view operation completion", a
 function descendants(el) {
 	return el.children.flatMap((child) => [child, ...descendants(child)]);
 }
+test("cover changes and recovery operations flush draft edits before rerendering", async () => {
+	const { view, plugin } = previewHarness();
+	view.article = {
+		flush: async () => {
+			throw Error("unsaved conflict");
+		},
+		dispose() {},
+	};
+	plugin.record().metadata.cover = "keep.png";
+	const clear = descendants(view.contentEl).find(
+		(el) => el.textContent === "清除",
+	);
+	await assert.rejects(clear.events.click(), /unsaved conflict/);
+	assert.equal(plugin.record().metadata.cover, "keep.png");
+	await assert.rejects(view.operation("verify", {}), /unsaved conflict/);
+	assert.equal(view.control.publishing, false);
+});
+test("double clicking window preview creates one popout", async () => {
+	const { view } = previewHarness();
+	let count = 0;
+	let finish;
+	view.contentEl.ownerDocument = {
+		defaultView: { screen: { availWidth: 1600, availHeight: 1000 } },
+	};
+	view.app = {
+		workspace: {
+			openPopoutLeaf() {
+				count++;
+				return {
+					view: {},
+					setViewState: () =>
+						new Promise((r) => {
+							finish = r;
+						}),
+				};
+			},
+			revealLeaf: async () => {},
+		},
+	};
+	const first = view.openPreviewWindow();
+	const second = view.openPreviewWindow();
+	await settle();
+	assert.equal(count, 1);
+	finish();
+	await Promise.all([first, second]);
+});
 test("metadata starts collapsed and retains the user's disclosure choice across rerenders", () => {
 	const { view } = previewHarness();
 	let fields = descendants(view.contentEl).find((el) => el.tag === "details");
@@ -345,8 +391,12 @@ test("browser preview enables only for an available snapshot and resets when the
 	assert.equal(view.browserButton.disabled, false);
 	assert.equal(
 		view.publishButton.disabled,
-		true,
-		"iframe must still complete its handshake",
+		false,
+		"worker has verified generated HTML without an embedded frame",
+	);
+	assert.equal(
+		descendants(view.contentEl).some((el) => el.tag === "iframe"),
+		false,
 	);
 	view.changed();
 	assert.equal(

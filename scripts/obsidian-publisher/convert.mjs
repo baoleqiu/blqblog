@@ -6,11 +6,18 @@ import {
 import katex from "katex";
 import remarkMath from "remark-math";
 import "katex/dist/contrib/mhchem.mjs";
+import imageLayout from "../../integrations/obsidian-blog-publisher/src/image-layout.cjs";
 import model from "../../integrations/obsidian-blog-publisher/src/model.cjs";
 import { prepareImage, prepareVideo } from "./assets.mjs";
 import { hash, html, validateId, validateMetadata } from "./common.mjs";
 
 const markdownText = (text) => String(text).replace(/[\\`*_[\]<>]/g, "\\$&");
+// Inline HTML remains inside its Markdown list, quote, or table cell. Pipes
+// and line breaks must be entities even inside attributes for GFM tables.
+const mediaAttribute = (text) =>
+	html(text)
+		.replace(/\r\n?|\n/g, "&#10;")
+		.replace(/\|/g, "&#124;");
 const decode = (text) => {
 	try {
 		return decodeURIComponent(text);
@@ -25,8 +32,6 @@ export async function convertNote(snapshot) {
 	const assets = [];
 	const edits = [];
 	const protectedRanges = [];
-	const imageNodes = [];
-	const definitions = new Map();
 	let body = String(snapshot.markdown);
 	let metadata;
 	const issue = (severity, code, message, offset = 0) =>
@@ -99,10 +104,6 @@ export async function convertNote(snapshot) {
 						);
 					}
 				}
-				if (node.type === "image" || node.type === "imageReference")
-					imageNodes.push(node);
-				if (node.type === "definition")
-					definitions.set(node.identifier, node.url);
 				for (const child of node.children || []) walk(child);
 			}
 			walk(tree);
@@ -156,9 +157,25 @@ export async function convertNote(snapshot) {
 			return null;
 		}
 	}
-	async function mediaMarkup(target, alt, size, offset) {
-		if (/^https?:\/\//i.test(target)) return null;
-		const asset = await exportAsset(target, offset, true);
+	function layoutMarkup(markup, layout) {
+		if (!layout) return markup;
+		// Unlike block HTML, text inside a span is still parsed as Markdown.
+		// Encode Markdown delimiters so a caption remains literal text.
+		const text = mediaAttribute(layout.caption).replace(
+			/[\\`*_{}[\]()!~$:@.]/g,
+			(char) => `&#${char.codePointAt(0)};`,
+		);
+		const caption = text
+			? `<span class="blq-image-caption">${text}</span>`
+			: "";
+		return `<span class="blq-image-layout" role="figure" data-align="${layout.align}" style="width:${layout.width}${layout.unit}">${markup}${caption}</span>`;
+	}
+	async function mediaMarkup(target, alt, size, offset, layout = null) {
+		const remote = /^https?:\/\//i.test(target);
+		if (remote && !layout) return null;
+		const asset = remote
+			? { originalUrl: target, displayUrl: target }
+			: await exportAsset(target, offset, true);
 		if (!asset) return null;
 		const requested = /^(\d+)(?:x(\d+))?$/.exec(size || "");
 		if (asset.kind === "video") {
@@ -167,23 +184,64 @@ export async function convertNote(snapshot) {
 				: "";
 			return `<video class="blq-video" src="${asset.originalUrl}" controls playsinline preload="metadata" aria-label="${html(alt || "视频")}"${dimensions}><a href="${asset.originalUrl}" target="_blank" rel="noopener noreferrer">打开原视频</a></video>`;
 		}
-		const width = requested
-			? Math.min(10000, Math.max(1, +requested[1]))
-			: asset.width;
-		const height = requested?.[2]
-			? Math.min(10000, Math.max(1, +requested[2]))
-			: Math.round((asset.height * width) / asset.width);
-		return `<a class="blq-lightbox no-styling" href="${asset.originalUrl}" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：${html(alt || "图片")}"><img class="blq-image" src="${asset.displayUrl}" alt="${html(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"></a>`;
+		// Width and height describe the real image ratio for layout stability.
+		// An explicit layout controls display size on its containing wrapper.
+		const width =
+			requested && !layout
+				? Math.min(10000, Math.max(1, +requested[1]))
+				: asset.width;
+		const height =
+			requested?.[2] && !layout
+				? Math.min(10000, Math.max(1, +requested[2]))
+				: asset.width
+					? Math.round((asset.height * width) / asset.width)
+					: undefined;
+		const dimensions =
+			width && height ? ` width="${width}" height="${height}"` : "";
+		const markup = `<a class="blq-lightbox no-styling" href="${mediaAttribute(asset.originalUrl)}" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：${mediaAttribute(alt || "图片")}"><img class="blq-image" src="${mediaAttribute(asset.displayUrl)}" alt="${mediaAttribute(alt)}"${dimensions} loading="lazy" decoding="async"></a>`;
+		return layoutMarkup(markup, layout);
 	}
-	for (const node of imageNodes) {
-		const start = node.position.start.offset;
-		const end = node.position.end.offset;
-		const target = node.url ?? definitions.get(node.identifier);
-		if (!target) {
-			issue("error", "missing-asset", "图片引用没有对应的链接定义。", start);
-			continue;
+	if (
+		snapshot.imageLayouts != null &&
+		(typeof snapshot.imageLayouts !== "object" ||
+			Array.isArray(snapshot.imageLayouts))
+	)
+		issue("error", "image-layout", "图片排版设置无效。");
+	const images = imageLayout.listImages(body);
+	const imageIdentity = (key) => key.replace(/-\d+$/, "");
+	const occurrenceCounts = new Map();
+	for (const { key } of images) {
+		const identity = imageIdentity(key);
+		occurrenceCounts.set(identity, (occurrenceCounts.get(identity) || 0) + 1);
+	}
+	const warnedIdentities = new Set();
+	for (const image of images) {
+		const { start, end, target, alt, size, key } = image;
+		let layout = null;
+		try {
+			layout = imageLayout.normalizeLayout(snapshot.imageLayouts?.[key]);
+		} catch (error) {
+			issue("error", "image-layout", error.message, start);
 		}
-		const replacement = await mediaMarkup(target, node.alt || "", "", start);
+		const identity = imageIdentity(key);
+		if (
+			layout?.occurrenceCount !== undefined &&
+			layout.occurrenceCount !== occurrenceCounts.get(identity)
+		) {
+			// Identical references have no persistent marker in Markdown. Do not
+			// transfer another occurrence's caption after an insertion or deletion.
+			layout = null;
+			if (!warnedIdentities.has(identity)) {
+				issue(
+					"warning",
+					"image-layout-count",
+					"同一图片引用数量有变化，请重新核对图片排版",
+					start,
+				);
+				warnedIdentities.add(identity);
+			}
+		}
+		const replacement = await mediaMarkup(target, alt, size, start, layout);
 		if (replacement) edits.push({ start, end, text: replacement });
 		protectedRanges.push([start, end]);
 	}

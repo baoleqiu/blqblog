@@ -9,6 +9,8 @@ const {
 } = require("obsidian");
 const { PreviewController } = require("./controller.cjs");
 const model = require("./model.cjs");
+const { ArticleContent } = require("./workbench-content.cjs");
+const { PREVIEW_VIEW_TYPE } = require("./preview-window.cjs");
 const VIEW_TYPE = "blqblog-publisher";
 const PREVIEW_INTERVAL = 60_000;
 const labels = {
@@ -82,15 +84,25 @@ class PublisherView extends ItemView {
 	}
 	async onOpen() {
 		this.closed = false;
-		this.registerDomEvent(window, "message", (event) =>
-			this.handlePreviewMessage(event),
-		);
 		await this.plugin.safe(() => this.plugin.recover());
 		if (this.closed) return;
 		this.bind(this.plugin.record());
 	}
 	async onClose() {
+		try {
+			await this.flushDraft();
+		} catch {
+			if (this.article?.record.contentMode === "draft") {
+				const saved = await this.plugin.saveDraftRecovery(
+					this.article.record,
+					this.article.text,
+				);
+				new Notice(`保存有冲突，未保存正文已保留到：${saved}`, 12000);
+			}
+		}
+		this.article?.dispose();
 		this.closed = true;
+		this.popup?.leaf.detach();
 		clearTimeout(this.timer);
 		this.timer = null;
 		this.control.invalidate();
@@ -118,6 +130,7 @@ class PublisherView extends ItemView {
 		)
 			return;
 		this.control.displayed(event.data.fingerprint);
+		this.popup?.setStatus("预览已更新");
 		this.buttons();
 		this.message(
 			result.issues.some((x) => x.severity === "error")
@@ -140,10 +153,68 @@ class PublisherView extends ItemView {
 		}
 	}
 	message(text, error = false) {
+		this.popup?.setStatus(text);
 		if (this.statusEl) {
 			this.statusText.setText(text);
 			this.statusEl.toggleClass("blq-error", error);
 			setIcon(this.statusIcon, error ? "circle-alert" : "info");
+		}
+	}
+	async flushDraft() {
+		await this.article?.flush();
+	}
+	filesChanged() {
+		const record = this.plugin.record();
+		this.control.missing =
+			record?.contentMode === "draft"
+				? record.draftMissing
+				: record?.sourceMissing;
+		if (this.control.missing)
+			this.message("当前发布文件已移走或删除，请检查文件位置。", true);
+		this.buttons();
+	}
+	async openPreviewWindow() {
+		if (this.openingWindow) return this.openingWindow;
+		this.openingWindow = this.openPreviewWindowOnce();
+		try {
+			return await this.openingWindow;
+		} finally {
+			this.openingWindow = null;
+		}
+	}
+	async openPreviewWindowOnce() {
+		await this.flushDraft();
+		if (this.closed) return;
+		if (!this.popup) {
+			const screen = this.contentEl.ownerDocument.defaultView.screen;
+			const leaf = this.app.workspace.openPopoutLeaf({
+				size: {
+					width: Math.round(screen.availWidth * 0.9),
+					height: Math.round(screen.availHeight * 0.9),
+				},
+			});
+			await leaf.setViewState({ type: PREVIEW_VIEW_TYPE, active: true });
+			if (this.closed) {
+				leaf.detach();
+				return;
+			}
+			this.popup = leaf.view;
+			this.popup.owner = this;
+		}
+		await this.app.workspace.revealLeaf(this.popup.leaf);
+		this.showWindowResult();
+		if (this.dirty && !this.refreshing) await this.refresh();
+	}
+	showWindowResult() {
+		if (!this.popup || !this.frameResult) return;
+		this.frame = this.popup.update(this.frameResult, this.frameGeneration);
+		if (this.frameGeneration === this.control.generation) {
+			this.control.displayedFingerprint = null;
+			this.buttons();
+			this.frame.contentWindow?.postMessage(
+				{ type: "blq-preview-request" },
+				new URL(this.frameResult.url).origin,
+			);
 		}
 	}
 	chooseNote(record) {
@@ -154,6 +225,7 @@ class PublisherView extends ItemView {
 			(file) =>
 				this.plugin.safe(async () => {
 					if (this.control.publishing) return;
+					await this.flushDraft();
 					if (record) {
 						if (this.plugin.record()?.id !== record.id) return;
 						model.relinkSource(this.plugin.state, record.id, file.path);
@@ -225,6 +297,8 @@ class PublisherView extends ItemView {
 		);
 	}
 	render() {
+		this.article?.dispose();
+		this.popup?.clear();
 		this.control.invalidate();
 		this.frame = null;
 		this.frameResult = null;
@@ -263,6 +337,7 @@ class PublisherView extends ItemView {
 		records.addEventListener("change", () =>
 			this.plugin.safe(async () => {
 				if (!records.value || this.control.publishing) return;
+				await this.flushDraft();
 				this.plugin.state.settings.lastRecordId = records.value;
 				await this.plugin.save();
 				this.bind(this.plugin.record());
@@ -294,7 +369,10 @@ class PublisherView extends ItemView {
 			return;
 		}
 		this.control.id = record.id;
-		this.control.missing = record.sourceMissing;
+		this.control.missing =
+			record.contentMode === "draft"
+				? record.draftMissing
+				: record.sourceMissing;
 		const source = body.createDiv({ cls: "blq-source-row" });
 		source.createEl("p", {
 			text: `原笔记：${record.sourcePath}`,
@@ -308,6 +386,36 @@ class PublisherView extends ItemView {
 		);
 		choose.addClass("blq-text-button");
 		this.editControls.push(choose);
+		const mode = body.createDiv({ cls: "blq-content-mode" });
+		mode.createSpan({
+			text: `当前发布：${record.contentMode === "draft" ? "博客稿" : "原笔记"}`,
+			cls: "blq-mode-label",
+		});
+		const draftButton = this.button(
+			mode,
+			record.contentMode === "draft"
+				? "切回原笔记"
+				: record.draftPath
+					? "继续编辑博客稿"
+					: "创建博客稿",
+			async () => {
+				await this.flushDraft();
+				if (record.contentMode === "draft")
+					await this.plugin.setContentMode(record, "source");
+				else if (record.draftPath)
+					await this.plugin.setContentMode(record, "draft");
+				else await this.plugin.createDraft(record);
+				this.bind(record);
+			},
+		);
+		this.editControls.push(draftButton);
+		mode.createSpan({
+			text:
+				record.contentMode === "draft"
+					? "正文独立保存，附件共用"
+					: "在左侧编辑正文；图片排版单独保存",
+			cls: "blq-muted",
+		});
 		const fields = body.createEl("details", { cls: "blq-fields" });
 		fields.open = this.metadataOpen;
 		fields.addEventListener("toggle", () => {
@@ -376,6 +484,7 @@ class PublisherView extends ItemView {
 								this.plugin.record()?.id !== record.id
 							)
 								return;
+							await this.flushDraft();
 							model.updateMetadata(record, { cover: file.path });
 							await this.plugin.save();
 							this.render();
@@ -387,6 +496,7 @@ class PublisherView extends ItemView {
 		this.editControls.push(
 			this.button(cover, "清除", async () => {
 				if (this.control.publishing) return;
+				await this.flushDraft();
 				model.updateMetadata(record, { cover: "" });
 				await this.plugin.save();
 				this.render();
@@ -395,10 +505,15 @@ class PublisherView extends ItemView {
 		);
 		const bar = body.createDiv({ cls: "blq-preview-toolbar" });
 		bar.createSpan({ text: "博客预览", cls: "blq-section-title" });
+		this.windowButton = this.button(bar, "窗口预览", () =>
+			this.openPreviewWindow(),
+		);
+		this.windowButton.addClass("blq-window-button");
 		this.refreshButton = this.button(bar, "刷新预览", () => this.refresh());
 		this.refreshButton.addClass("blq-text-button");
 		this.browserButton = this.button(bar, "在浏览器预览", () => {
-			if (this.frameResult) window.open(this.frameResult.url, "_blank");
+			if (this.frameResult)
+				require("electron").shell.openExternal(this.frameResult.url);
 		});
 		this.browserButton.addClass("blq-browser-button");
 		setIcon(
@@ -406,12 +521,8 @@ class PublisherView extends ItemView {
 			"external-link",
 		);
 		this.issuesEl = body.createDiv({ cls: "blq-issues" });
-		this.previewEl = body.createDiv({ cls: "blq-preview" });
-		const placeholder = this.previewEl.createDiv({
-			cls: "blq-preview-placeholder",
-		});
-		setIcon(placeholder.createSpan(), "book-open");
-		placeholder.createEl("p", { text: "文章预览将在这里显示" });
+		const content = body.createDiv({ cls: "blq-article-content" });
+		this.article = new ArticleContent(this, content, record);
 		const footer = el.createDiv({ cls: "blq-footer" });
 		this.footerStatus = footer.createSpan({
 			cls: "blq-footer-status",
@@ -457,10 +568,18 @@ class PublisherView extends ItemView {
 	}
 	buttons() {
 		for (const input of this.editControls || [])
-			input.disabled = this.control.publishing || this.closed;
-		if (this.publishButton) this.publishButton.disabled = !this.control.ready();
+			input.disabled =
+				this.control.publishing ||
+				this.closed ||
+				Boolean(this.plugin.importingData) ||
+				Boolean(this.article?.importing);
+		if (this.publishButton)
+			this.publishButton.disabled =
+				!this.control.ready() || Boolean(this.plugin.importingData);
 		if (this.browserButton)
 			this.browserButton.disabled = !this.frameResult || this.closed;
+		if (this.windowButton)
+			this.windowButton.disabled = this.closed || this.control.publishing;
 		if (this.footerStatus)
 			this.footerStatus.setText(
 				this.control.publishing
@@ -481,6 +600,8 @@ class PublisherView extends ItemView {
 		this.dirty = true;
 		this.control.invalidate();
 		this.buttons();
+		if (this.plugin.readContent)
+			this.plugin.safe(() => this.article?.refreshImages());
 		if (this.control.publishing || this.closed) return;
 		this.message(
 			this.refreshing
@@ -515,6 +636,7 @@ class PublisherView extends ItemView {
 		this.buttons();
 		this.message("正在生成预览……");
 		try {
+			await this.flushDraft();
 			const snapshot = await this.plugin.snapshot(record);
 			if (this.closed || generation !== this.control.generation) return;
 			const result = await this.plugin
@@ -547,7 +669,9 @@ class PublisherView extends ItemView {
 					text: `${issue.severity === "error" ? "需处理" : "提示"} · 第 ${issue.line} 行：${issue.message}`,
 				});
 				const locate = this.button(row, "查看位置", async () => {
-					const file = this.app.vault.getAbstractFileByPath(record.sourcePath);
+					const file = this.app.vault.getAbstractFileByPath(
+						this.plugin.contentPath?.(record) || record.sourcePath,
+					);
 					if (!file) throw Error("原笔记已移走或删除，请重新关联笔记。");
 					const leaf = this.app.workspace.getLeaf(false);
 					await leaf.openFile(file);
@@ -559,22 +683,17 @@ class PublisherView extends ItemView {
 					`查看第 ${issue.line} 行：${issue.message}`,
 				);
 			}
-			this.previewEl.empty();
-			const frame = this.previewEl.createEl("iframe", {
-				cls: "blq-frame",
-				attr: { title: "文章的真实博客预览" },
-			});
-			this.frame = frame;
 			this.frameResult = result;
 			this.frameGeneration = generation;
-			frame.addEventListener("load", () => {
-				if (this.closed || generation !== this.control.generation) return;
-				frame.contentWindow.postMessage(
-					{ type: "blq-preview-request" },
-					new URL(result.url).origin,
+			if (this.popup) this.showWindowResult();
+			else if (generation === this.control.generation)
+				this.control.displayed(result.fingerprint);
+			if (generation === this.control.generation)
+				this.message(
+					result.issues.some((x) => x.severity === "error")
+						? "预览已生成，请先处理标出的问题。"
+						: "预览已生成，可打开窗口查看。浏览器入口也已就绪。",
 				);
-			});
-			frame.src = result.url;
 			if (generation !== this.control.generation)
 				this.message(
 					"已显示本轮预览；还有新修改，将在 1 分钟内更新，也可手动刷新。",
@@ -599,6 +718,7 @@ class PublisherView extends ItemView {
 		}
 	}
 	async publish() {
+		await this.flushDraft();
 		if (!this.control.ready()) throw Error("请等待当前文章预览加载完成。");
 		const record = this.plugin.record();
 		const snapshot = await this.plugin.snapshot(record);
@@ -609,6 +729,10 @@ class PublisherView extends ItemView {
 		});
 	}
 	async operation(command, payload) {
+		this.plugin.assertEditable?.();
+		if (this.control.publishing) throw Error("已有操作正在进行。");
+		await this.flushDraft();
+		this.plugin.assertEditable?.();
 		if (this.control.publishing) throw Error("已有操作正在进行。");
 		const record = this.plugin.record();
 		this.control.publishing = true;

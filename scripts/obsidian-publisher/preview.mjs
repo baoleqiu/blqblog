@@ -69,7 +69,9 @@ export class PreviewManager {
 	}
 	async preview(snapshot) {
 		this.candidate = null;
+		this.onProgress("正在检查正文与附件……");
 		const candidate = await convertNote(snapshot);
+		this.onProgress("正在同步博客主题……");
 		const themeHash = await themeFingerprint(this.repoRoot);
 		candidate.fingerprint = hash(`${candidate.fingerprint}:${themeHash}`);
 		const overlay = { ...candidate.files };
@@ -114,6 +116,7 @@ export class PreviewManager {
 			});
 		}
 		const url = `http://127.0.0.1:${this.port}${candidate.articleUrl}`;
+		this.onProgress("正在等待网页生成……");
 		await waitForCandidate(url, candidate.fingerprint, {
 			check: () => {
 				if (this.failure) throw this.failure;

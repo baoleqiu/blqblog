@@ -38,6 +38,45 @@
     }
   }
 
+  /* 仅显式设置的图片使用此布局，旧文章仍沿用默认尺寸与居中行为。 */
+  .blq-image-layout {
+    display: block;
+    max-width: 100%;
+    padding: 0;
+    margin-block: 1lh;
+    margin-inline: auto;
+
+    &[data-align="left"] {
+      margin-inline: 0 auto;
+    }
+
+    &[data-align="right"] {
+      margin-inline: auto 0;
+    }
+
+    > .blq-lightbox {
+      width: 100%;
+      margin: 0;
+
+      > img {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0;
+      }
+    }
+
+    > .blq-image-caption {
+      display: block;
+      margin: 0.5rem 0 0;
+      text-align: center;
+      font-size: 0.875em;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+
   figure:has(.blq-lightbox) figcaption {
     text-align: center;
   }

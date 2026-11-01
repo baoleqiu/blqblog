@@ -37,6 +37,37 @@ class PublisherSettings extends PluginSettingTab {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
+	async importData(text, migrate = false) {
+		let incomingText = text;
+		this.plugin.assertEditable();
+		await this.plugin.view()?.flushDraft?.();
+		this.plugin.assertEditable();
+		this.plugin.importingData = true;
+		this.plugin.view()?.buttons?.();
+		try {
+			if (migrate) {
+				const data = JSON.parse(text);
+				data.settings = {
+					...data.settings,
+					vaultRoot: this.app.vault.adapter.getBasePath(),
+					repoPath: this.plugin.state.settings.repoPath,
+				};
+				incomingText = JSON.stringify(data);
+			}
+			const result = await this.plugin.store.import(incomingText);
+			if (this.plugin.view()?.control?.publishing)
+				throw Error("发布正在进行，请稍后导入。");
+			this.plugin.state = result;
+			this.plugin.view()?.render();
+			new Notice(
+				migrate ? "发布记录已迁移，请重新预览核对。" : "发布数据已导入。",
+			);
+			return result;
+		} finally {
+			this.plugin.importingData = false;
+			this.plugin.view()?.buttons?.();
+		}
+	}
 	display() {
 		const el = this.containerEl;
 		el.empty();
@@ -110,10 +141,7 @@ class PublisherSettings extends PluginSettingTab {
 			.addButton((b) =>
 				b.setButtonText("导入 JSON").onClick(() =>
 					new TextModal(this.app, "粘贴发布数据 JSON", "", async (text) => {
-						const result = await this.plugin.store.import(text);
-						this.plugin.state = result;
-						this.plugin.view()?.render();
-						new Notice("发布数据已导入。");
+						await this.importData(text);
 					}).open(),
 				),
 			);
@@ -129,17 +157,7 @@ class PublisherSettings extends PluginSettingTab {
 						"迁移备份到当前库与博客目录",
 						"",
 						async (text) => {
-							const data = JSON.parse(text);
-							data.settings = {
-								...data.settings,
-								vaultRoot: this.app.vault.adapter.getBasePath(),
-								repoPath: settings.repoPath,
-							};
-							this.plugin.state = await this.plugin.store.import(
-								JSON.stringify(data),
-							);
-							this.plugin.view()?.render();
-							new Notice("发布记录已迁移，请重新预览核对。");
+							await this.importData(text, true);
 						},
 					).open(),
 				),

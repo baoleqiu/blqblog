@@ -2,6 +2,7 @@
   "name": "firefly",
   "type": "module",
   "version": "6.12.3",
+  "engines": { "node": ">=22.12.0" },
   "scripts": {
     "publisher:build": "node scripts/obsidian-publisher/build-plugin.mjs",
     "publisher:test": "node --test tests/obsidian-publisher/*.test.cjs tests/obsidian-publisher/*.test.mjs",
@@ -55,6 +56,7 @@
     "hastscript": "^9.0.1",
     "katex": "^0.17.0",
     "l2d-widget": "^0.1.0",
+    "mdast-util-from-markdown": "^2.1.0",
     "mdast-util-to-string": "^4.0.0",
     "pagefind": "^1.5.2",
     "pako": "^2.1.0",
