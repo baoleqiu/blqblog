@@ -79,3 +79,21 @@ test("preview window reuses its frame, keeps phone width and delegates only to i
 	view.receive({ data: "old" });
 	assert.equal(events.length, 1);
 });
+
+test("frame load binds readiness messages to the document after popout adoption", () => {
+	const view = new PreviewWindowView({}, {});
+	view.render();
+	const bindings = [];
+	view.registerDomEvent = (win, type, listener) =>
+		bindings.push({ win, type, listener });
+	const frame = view.update({ url: "http://127.0.0.1:4321/a" }, 1);
+	const popupWindow = {};
+	frame.ownerDocument = { defaultView: popupWindow };
+	frame.contentWindow = { postMessage() {} };
+	frame.events.load();
+	assert.equal(bindings.length, 1);
+	assert.equal(bindings[0].win, popupWindow);
+	assert.equal(bindings[0].type, "message");
+	frame.events.load();
+	assert.equal(bindings.length, 1, "reloads must not duplicate listeners");
+});

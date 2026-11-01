@@ -17,8 +17,6 @@ class PreviewWindowView extends ItemView {
 	}
 	async onOpen() {
 		this.render();
-		const win = this.contentEl.ownerDocument.defaultView;
-		this.registerDomEvent(win, "message", (event) => this.receive(event));
 		this.owner = this.plugin.view();
 		if (this.owner) {
 			this.owner.popup = this;
@@ -50,6 +48,13 @@ class PreviewWindowView extends ItemView {
 	receive(event) {
 		this.owner?.handlePreviewMessage(event);
 	}
+	bindMessageWindow() {
+		const win = this.frame?.ownerDocument.defaultView;
+		if (!win || this.messageWindows?.has(win)) return;
+		this.messageWindows ||= new Set();
+		this.messageWindows.add(win);
+		this.registerDomEvent(win, "message", (event) => this.receive(event));
+	}
 	resize(phone) {
 		this.phone = phone;
 		if (this.frame) this.frame.style.maxWidth = phone ? "390px" : "100%";
@@ -68,6 +73,7 @@ class PreviewWindowView extends ItemView {
 				attr: { title: "文章的真实博客预览" },
 			});
 			this.frame.addEventListener("load", () => {
+				this.bindMessageWindow();
 				if (this.result)
 					this.frame.contentWindow.postMessage(
 						{ type: "blq-preview-request" },

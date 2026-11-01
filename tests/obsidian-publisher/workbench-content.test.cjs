@@ -4,6 +4,31 @@ const {
 	DraftBuffer,
 	ArticleContent,
 } = require("../../integrations/obsidian-blog-publisher/src/workbench-content.cjs");
+
+test("layout-only updates preserve image controls and focus while source edits refresh them", async () => {
+	let source = "unchanged article";
+	let renders = 0;
+	const content = Object.create(ArticleContent.prototype);
+	Object.assign(content, {
+		text: source,
+		record: {},
+		buffer: { base: source },
+		plugin: { readContent: async () => source },
+		render() {
+			renders++;
+		},
+	});
+	await content.refreshImages();
+	assert.equal(
+		renders,
+		0,
+		"saving a layout must keep the next control clickable",
+	);
+	source = "article with a new image";
+	await content.refreshImages();
+	assert.equal(renders, 1);
+	assert.equal(content.text, source);
+});
 test("image import captures insertion position and flush waits for imported references", async () => {
 	let finish;
 	const editor = {

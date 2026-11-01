@@ -240,6 +240,7 @@ class ArticleContent {
 			}
 			return;
 		}
+		if (text === this.text) return;
 		this.text = text;
 		this.buffer.base = text;
 		this.render();
