@@ -1,0 +1,16 @@
+{
+  "id": "02be229b-bfee-483b-9eb2-1037c979e06d",
+  "operationId": "765fdd1c-35c0-4491-85c6-c4e56a6514fe",
+  "action": "publish",
+  "contentFingerprint": "7623f2da2031e0efd82194332f26d1411337f689de697c9c8cfa11319196bb39",
+  "updated": null,
+  "files": {
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/originals/c4742e649e29c0b1cf1882f464ccae29ed699b27ad7de265b6af665e0716da37.jpg": "c4742e649e29c0b1cf1882f464ccae29ed699b27ad7de265b6af665e0716da37",
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/display/c4742e649e29c0b1cf1882f464ccae29ed699b27ad7de265b6af665e0716da37.webp": "538909c97dbaca0ebff2d677fb8e726fbb08f7d7526c49a2908b562db0183246",
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/originals/8e361b107b5aba2d71a6fec5ca36c53cfa603d3c5afb591fe8e101530e0df282.jpg": "8e361b107b5aba2d71a6fec5ca36c53cfa603d3c5afb591fe8e101530e0df282",
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/display/8e361b107b5aba2d71a6fec5ca36c53cfa603d3c5afb591fe8e101530e0df282.webp": "e5a08e33a7af36c929b40852864701f42fab1eb7813923324696647a3eec2b2e",
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/originals/0a39f49e272e940bd1f4acb353f480d1fd6da6880dca24ca8e8e070e6e4151c6.jpg": "0a39f49e272e940bd1f4acb353f480d1fd6da6880dca24ca8e8e070e6e4151c6",
+    "public/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/display/0a39f49e272e940bd1f4acb353f480d1fd6da6880dca24ca8e8e070e6e4151c6.webp": "d219429c7755b8df88ba54d64639917c22276449e1f77ab8f4f474673a369e7e",
+    "src/content/posts/obsidian/02be229b-bfee-483b-9eb2-1037c979e06d/index.md": "63bccc154b7ba82258197e896ba9380431e6c6bc95df11a6903571f77122d049"
+  }
+}
