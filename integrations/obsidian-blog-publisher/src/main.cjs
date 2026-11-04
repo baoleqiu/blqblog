@@ -502,9 +502,11 @@ module.exports = class BlogPublisher extends Plugin {
 	async recover() {
 		if (!this.state.settings.repoPath) return;
 		const result = await this.getClient().request("inspect");
+		const pending = new Map();
 		for (const op of result.operations || []) {
 			const record = this.state.records.find((r) => r.id === op.id);
 			if (!record) continue;
+			if (["prepared", "committed"].includes(op.status)) pending.set(op.id, op);
 			record.operation = op;
 			record.status = op.status;
 			if (op.status === "live")
@@ -514,6 +516,11 @@ module.exports = class BlogPublisher extends Plugin {
 					updated: op.updated,
 				};
 			if (op.status === "unpublished") record.lastPublished = null;
+		}
+		for (const [id, op] of pending) {
+			const record = this.state.records.find((r) => r.id === id);
+			record.operation = op;
+			record.status = op.status;
 		}
 		await this.save();
 	}

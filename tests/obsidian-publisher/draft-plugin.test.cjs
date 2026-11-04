@@ -53,6 +53,19 @@ function harness(source = "![[../attachments/a.png]]\n[笔记](./other.md)\n![�
 	plugin.registerView = plugin.registerEvent = plugin.addSettingTab = plugin.addRibbonIcon = plugin.addCommand = () => {};
 	return { plugin, record, files, leaves, eventHandlers };
 }
+for (const status of ["prepared", "committed"]) {
+	test(`recovery prioritizes ${status} operation over a recently checked old release`, async () => {
+		const { plugin, record } = harness();
+		plugin.state.settings.repoPath = "E:/blog";
+		const pending = { id: record.id, operationId: "pending", status };
+		const published = { id: record.id, operationId: "old-live", status: "live", commit: "abc", contentFingerprint: "old" };
+		plugin.getClient = () => ({ request: async () => ({ operations: [pending, published] }) });
+		await plugin.recover();
+		assert.equal(record.operation.operationId, "pending");
+		assert.equal(record.status, status);
+		assert.equal(record.lastPublished.commit, "abc");
+	});
+}
 test("creating an optional draft shares attachments, rewrites movable references and retains identity", async () => {
 	const { plugin, record, files } = harness();
 	const original = files.get(record.sourcePath).text;
