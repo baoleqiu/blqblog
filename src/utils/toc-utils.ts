@@ -22,6 +22,19 @@ export class TOCManager {
 	private contentId: string;
 	private indicatorId: string;
 	private scrollOffset: number;
+	private scrollbarContainer: HTMLElement | null = null;
+	private scrollbarTimeout = 0;
+	private handleScrollbarWheel = (): void => {
+		this.scrollbarContainer?.classList.add("is-scrolling");
+		window.clearTimeout(this.scrollbarTimeout);
+		this.scrollbarTimeout = window.setTimeout(() => this.resetScrollbar(), 800);
+	};
+
+	public resetScrollbar(): void {
+		window.clearTimeout(this.scrollbarTimeout);
+		this.scrollbarTimeout = 0;
+		this.scrollbarContainer?.classList.remove("is-scrolling");
+	}
 
 	constructor(config: TOCConfig) {
 		this.contentId = config.contentId;
@@ -426,6 +439,12 @@ export class TOCManager {
 	 * 清理
 	 */
 	public cleanup(): void {
+		this.scrollbarContainer?.removeEventListener(
+			"wheel",
+			this.handleScrollbarWheel,
+		);
+		this.resetScrollbar();
+		this.scrollbarContainer = null;
 		if (this.observer) {
 			this.observer.disconnect();
 			this.observer = null;
@@ -440,7 +459,17 @@ export class TOCManager {
 	 * 初始化
 	 */
 	public init(): void {
+		this.cleanup();
 		this.updateTOCContent();
+		this.scrollbarContainer =
+			document
+				.getElementById(this.contentId)
+				?.closest<HTMLElement>(".toc-scroll-container") ?? null;
+		this.scrollbarContainer?.addEventListener(
+			"wheel",
+			this.handleScrollbarWheel,
+			{ passive: true },
+		);
 		this.bindClickEvents();
 		this.setupObserver();
 		this.updateActiveState();

@@ -57,7 +57,7 @@ const sidebarPosition = sidebarLayoutConfig.position;
         </div>
     </div>
 
-    <div class="toc-scroll-container p-4">
+    <div class="toc-scroll-container custom-scrollbar p-4">
         <div
         class="toc-content"
         id="floating-toc-content"
@@ -153,6 +153,7 @@ const sidebarPosition = sidebarLayoutConfig.position;
     if (!panel) return;
 
     const isHidden = panel.classList.contains("hide");
+    window.FloatingTOC.manager?.resetScrollbar();
     if (isHidden) {
       panel.classList.remove("hide");
       panel.classList.add("show");
@@ -164,6 +165,7 @@ const sidebarPosition = sidebarLayoutConfig.position;
 
   // 关闭 TOC 面板
   function closeTOC() {
+    window.FloatingTOC.manager?.resetScrollbar();
     const panel = window.FloatingTOC.panel;
     if (panel && !panel.classList.contains("hide")) {
       panel.classList.add("hide");

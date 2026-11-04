@@ -1,3 +1,4 @@
+import { captureReadingPosition as captureArticlePosition } from "./reading-position-utils";
 import { createReadingTransition } from "./reading-transition-utils";
 import { TOCManager } from "./toc-utils";
 
@@ -47,6 +48,7 @@ export function setupImmersiveReading(): void {
 				: tocToggle.dataset.expandLabel,
 		);
 		if (toc) toc.hidden = !active || !expanded;
+		if (!active || !expanded) manager?.resetScrollbar();
 		root.classList.toggle("immersive-toc-open", active && expanded && !!toc);
 	}
 
@@ -71,16 +73,7 @@ export function setupImmersiveReading(): void {
 		element: HTMLElement;
 		top: number;
 	} | null {
-		if (!article) return null;
-		const element = Array.from(
-			article.querySelectorAll<HTMLElement>("h1, h2, h3, h4, p, pre, figure"),
-		).find((element) => {
-			const rect = element.getBoundingClientRect();
-			return rect.bottom > 24 && rect.top < window.innerHeight;
-		});
-		return element
-			? { element, top: element.getBoundingClientRect().top }
-			: null;
+		return article ? captureArticlePosition(article) : null;
 	}
 
 	function retainReadingPosition(

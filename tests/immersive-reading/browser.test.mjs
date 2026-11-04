@@ -192,7 +192,7 @@ test("immersive reading in a real browser", { timeout: 120000 }, async (t) => {
 				const paragraphs = Array.from(document.querySelectorAll('#post-container .custom-md p')).filter(p => p.getBoundingClientRect().height > 12);
 				const target = paragraphs[Math.floor(paragraphs.length * ${fraction})];
 				window.scrollTo({top: scrollY + target.getBoundingClientRect().top - 80, behavior:'instant'});
-				window.__currentReadingParagraph = Array.from(document.querySelectorAll('#post-container h1, #post-container h2, #post-container h3, #post-container h4, #post-container p, #post-container pre, #post-container figure')).find(p => p.getBoundingClientRect().bottom > 24 && p.getBoundingClientRect().top < innerHeight);
+				window.__currentReadingParagraph = target;
 				window.__currentReadingOffset = window.__currentReadingParagraph.getBoundingClientRect().top;
 			})()`);
 			}

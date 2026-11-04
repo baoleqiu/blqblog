@@ -1,4 +1,5 @@
 import { loadGSAPFlip } from "./gsap-utils";
+import { captureReadingPosition } from "./reading-position-utils";
 
 type GSAPContext = ReturnType<typeof import("gsap").gsap.context>;
 type ReadingAction = "enter" | "exit" | "toc-open" | "toc-close";
@@ -159,13 +160,9 @@ export function createReadingTransition(): ReadingTransition {
 						// through the movement. Keep the original surrounding DOM alive.
 						const beforeArticle = article.getBoundingClientRect();
 						const beforeTOC = visibleRect(toc);
-						const anchor = Array.from(
-							article.querySelectorAll<HTMLElement>("h1,h2,h3,h4,p,pre,figure"),
-						).find((element) => {
-							const rect = element.getBoundingClientRect();
-							return rect.bottom > 24 && rect.top < innerHeight;
-						});
-						const anchorTop = anchor?.getBoundingClientRect().top;
+						const position = captureReadingPosition(article);
+						const anchor = position?.element;
+						const anchorTop = position?.top;
 						const retreating =
 							action === "enter"
 								? surroundingCards(null).map((element) => ({
@@ -213,7 +210,23 @@ export function createReadingTransition(): ReadingTransition {
 								}
 							}
 						}
-						gsap.set(article, { transformOrigin: "0 0" });
+						// Keep scale rounding local to the visible reading point. Using
+						// the top of a 50,000px article amplifies it into visible jitter.
+						const articleRect = article.getBoundingClientRect();
+						const visibleAnchorY = anchor
+							? Math.max(
+									24,
+									Math.min(
+										innerHeight - 24,
+										anchor.getBoundingClientRect().top,
+									),
+								)
+							: innerHeight / 2;
+						const originY = Math.max(
+							0,
+							Math.min(articleRect.height, visibleAnchorY - articleRect.top),
+						);
+						gsap.set(article, { transformOrigin: `0 ${originY}px` });
 						const from = fitVars(article, beforeArticle);
 						gsap.set(article, from);
 						// Width changes reflow the text. Align the visible paragraph as

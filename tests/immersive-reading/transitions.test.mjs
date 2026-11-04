@@ -364,7 +364,7 @@ test("immersive reading lifts the article and directory above retreating cards",
 				const paragraphs = Array.from(article.querySelectorAll('.custom-md p')).filter(p => p.getBoundingClientRect().height > 12);
 				const target = paragraphs[Math.floor(paragraphs.length * ${fraction})];
 				window.scrollTo({top:scrollY+target.getBoundingClientRect().top-80,behavior:'instant'});
-				window.__readingParagraph = Array.from(article.querySelectorAll('h1,h2,h3,h4,p,pre,figure')).find(p => p.getBoundingClientRect().bottom > 24 && p.getBoundingClientRect().top < innerHeight);
+				window.__readingParagraph = target;
 				window.__readingParagraphTop = window.__readingParagraph.getBoundingClientRect().top;
 			})()`);
 			}

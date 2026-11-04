@@ -9,6 +9,38 @@
 	padding-right: 0.125rem;
 }
 
+/* 侧栏、悬浮与沉浸目录共用按需显示的滚动条。 */
+:is(#left-sidebar, #right-sidebar, #floating-toc-panel, #immersive-toc) .toc-scroll-container {
+	--toc-scrollbar-thumb: rgb(0 0 0 / 0.22);
+	scrollbar-gutter: stable;
+	scrollbar-color: transparent transparent;
+	transition: scrollbar-color 0.18s ease;
+}
+
+.dark :is(#left-sidebar, #right-sidebar, #floating-toc-panel, #immersive-toc) .toc-scroll-container {
+	--toc-scrollbar-thumb: rgb(255 255 255 / 0.28);
+}
+
+:is(#left-sidebar, #right-sidebar, #floating-toc-panel, #immersive-toc) .toc-scroll-container.is-scrolling {
+	scrollbar-color: var(--toc-scrollbar-thumb) transparent;
+}
+
+:is(#left-sidebar, #right-sidebar, #floating-toc-panel, #immersive-toc) .toc-scroll-container::-webkit-scrollbar-thumb {
+	background: transparent;
+	border-color: transparent;
+	transition: background-color 0.18s ease;
+}
+
+:is(#left-sidebar, #right-sidebar, #floating-toc-panel, #immersive-toc) .toc-scroll-container.is-scrolling::-webkit-scrollbar-thumb {
+	background: var(--toc-scrollbar-thumb);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.toc-scroll-container {
+		transition: none;
+	}
+}
+
 /* TOC 内容容器 */
 .toc-content {
 	display: flex;
