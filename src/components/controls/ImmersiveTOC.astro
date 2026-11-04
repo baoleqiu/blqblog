@@ -1,0 +1,28 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import "@/styles/toc.css";
+
+const collapseLabel = i18n(I18nKey.immersiveTocCollapse);
+---
+
+<aside id="immersive-toc" aria-labelledby="immersive-toc-title" data-no-swup hidden>
+  <div class="immersive-toc-header">
+    <h2 id="immersive-toc-title">{i18n(I18nKey.tableOfContents)}</h2>
+    <button
+      id="immersive-toc-collapse"
+      class="btn-plain rounded-lg h-8 w-8"
+      type="button"
+      aria-label={collapseLabel}
+      title={collapseLabel}
+      aria-controls="immersive-toc"
+      aria-expanded="true"
+    >
+      <Icon is:inline name="material-symbols:close" />
+    </button>
+  </div>
+  <nav class="toc-scroll-container custom-scrollbar" aria-label={i18n(I18nKey.tableOfContents)}>
+    <div id="immersive-toc-content" class="toc-content"></div>
+  </nav>
+</aside>

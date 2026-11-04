@@ -19,6 +19,10 @@ enum I18nKey {
 	postList = "postList",
 	tableOfContents = "tableOfContents",
 	tocEmpty = "tocEmpty",
+	immersiveReadingEnter = "immersiveReadingEnter",
+	immersiveReadingExit = "immersiveReadingExit",
+	immersiveTocExpand = "immersiveTocExpand",
+	immersiveTocCollapse = "immersiveTocCollapse",
 	music = "music",
 
 	// 公告栏

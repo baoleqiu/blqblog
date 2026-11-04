@@ -2,7 +2,9 @@
   "name": "firefly",
   "type": "module",
   "version": "6.12.3",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "publisher:build": "node scripts/obsidian-publisher/build-plugin.mjs",
     "publisher:test": "node --test tests/obsidian-publisher/*.test.cjs tests/obsidian-publisher/*.test.mjs",
@@ -53,6 +55,7 @@
     "expressive-code-collapsible": "^0.1.0",
     "expressive-code-language-badge": "^1.1.0",
     "glob": "^11.1.0",
+    "gsap": "3.15.1",
     "hastscript": "^9.0.1",
     "katex": "^0.17.0",
     "l2d-widget": "^0.1.0",

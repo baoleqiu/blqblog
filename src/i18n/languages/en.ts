@@ -2,6 +2,10 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const en: Translation = {
+	[Key.immersiveReadingEnter]: "Enter immersive reading",
+	[Key.immersiveReadingExit]: "Exit immersive reading (Esc)",
+	[Key.immersiveTocExpand]: "Expand table of contents",
+	[Key.immersiveTocCollapse]: "Collapse table of contents",
 	[Key.home]: "Home",
 	[Key.about]: "About",
 	[Key.archive]: "Archive",

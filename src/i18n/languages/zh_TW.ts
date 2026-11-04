@@ -2,6 +2,10 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const zh_TW: Translation = {
+	[Key.immersiveReadingEnter]: "進入沉浸閱讀",
+	[Key.immersiveReadingExit]: "退出沉浸閱讀（Esc）",
+	[Key.immersiveTocExpand]: "展開目錄",
+	[Key.immersiveTocCollapse]: "摺疊目錄",
 	[Key.home]: "首頁",
 	[Key.about]: "關於我",
 	[Key.archive]: "歸檔",

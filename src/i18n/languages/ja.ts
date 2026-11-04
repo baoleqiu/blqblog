@@ -2,6 +2,10 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const ja: Translation = {
+	[Key.immersiveReadingEnter]: "集中読書モードに入る",
+	[Key.immersiveReadingExit]: "集中読書モードを終了（Esc）",
+	[Key.immersiveTocExpand]: "目次を開く",
+	[Key.immersiveTocCollapse]: "目次を閉じる",
 	[Key.home]: "ホーム",
 	[Key.about]: "について",
 	[Key.archive]: "アーカイブ",

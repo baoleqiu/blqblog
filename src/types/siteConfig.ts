@@ -123,6 +123,13 @@ export type SiteConfig = {
 		sharePoster?: boolean;
 		// OpenGraph图片功能
 		generateOgImages: boolean;
+		// 桌面端文章沉浸阅读
+		immersiveReading?: {
+			enable?: boolean;
+			defaultOn?: boolean;
+			tocEnabled?: boolean;
+			tocPosition?: "left" | "right";
+		};
 	};
 
 	// bangumi配置

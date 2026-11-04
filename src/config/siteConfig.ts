@@ -15,17 +15,10 @@ export const siteConfig: SiteConfig = {
 	site_url: "https://blqblog.cn",
 
 	// 站点描述
-	description:
-		"个人博客",
+	description: "个人博客",
 
 	// 站点关键词
-	keywords: [
-		"Firefly",
-		"Fuwari",
-		"Astro",
-		"博客",
-		"静态博客",
-	],
+	keywords: ["Firefly", "Fuwari", "Astro", "博客", "静态博客"],
 
 	// 主题色
 	themeColor: {
@@ -153,6 +146,13 @@ export const siteConfig: SiteConfig = {
 		sharePoster: true,
 		// OpenGraph图片功能，注意开启后要渲染很长时间，不建议本地调试的时候开启
 		generateOgImages: false,
+		// 沉浸阅读（仅桌面端 >= 1024px）
+		immersiveReading: {
+			enable: true, // 显示文章页右下角的沉浸阅读入口
+			defaultOn: false, // 进入文章页时默认开启
+			tocEnabled: true, // 启用目录按钮，进入沉浸阅读时默认收起
+			tocPosition: "right", // 目录位置：left 或 right
+		},
 	},
 
 	// bangumi配置

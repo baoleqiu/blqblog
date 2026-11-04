@@ -2,6 +2,10 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const ru: Translation = {
+	[Key.immersiveReadingEnter]: "Включить режим чтения",
+	[Key.immersiveReadingExit]: "Выйти из режима чтения (Esc)",
+	[Key.immersiveTocExpand]: "Развернуть оглавление",
+	[Key.immersiveTocCollapse]: "Свернуть оглавление",
 	[Key.home]: "Главная",
 	[Key.about]: "О нас",
 	[Key.archive]: "Архив",

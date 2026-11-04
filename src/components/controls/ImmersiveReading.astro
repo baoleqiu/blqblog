@@ -1,0 +1,51 @@
+---
+import { Icon } from "astro-icon/components";
+import { siteConfig } from "@/config/siteConfig";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+
+const config = siteConfig.post.immersiveReading;
+const enterLabel = i18n(I18nKey.immersiveReadingEnter);
+const expandLabel = i18n(I18nKey.immersiveTocExpand);
+---
+
+<div
+  id="immersive-reading-controls"
+  data-default-on={String(config?.defaultOn ?? false)}
+  data-toc-position={config?.tocPosition ?? "right"}
+>
+  <button
+    id="immersive-toc-toggle"
+    class="immersive-control"
+    type="button"
+    aria-label={expandLabel}
+    title={expandLabel}
+    aria-controls="immersive-toc"
+    aria-expanded="false"
+    data-expand-label={expandLabel}
+    data-collapse-label={i18n(I18nKey.immersiveTocCollapse)}
+    hidden
+  >
+    <Icon is:inline name="material-symbols:format-list-bulleted" />
+  </button>
+  <button
+    id="immersive-reading-toggle"
+    class="immersive-control"
+    type="button"
+    aria-label={enterLabel}
+    title={enterLabel}
+    aria-pressed="false"
+    data-enter-label={enterLabel}
+    data-exit-label={i18n(I18nKey.immersiveReadingExit)}
+    hidden
+  >
+    <span class="immersive-enter-icon"><Icon is:inline name="material-symbols:chrome-reader-mode-outline-rounded" /></span>
+    <span class="immersive-exit-icon"><Icon is:inline name="material-symbols:close-fullscreen-rounded" /></span>
+  </button>
+</div>
+
+<script>
+  import { setupImmersiveReading } from "@/utils/immersive-reading-utils";
+
+  setupImmersiveReading();
+</script>
