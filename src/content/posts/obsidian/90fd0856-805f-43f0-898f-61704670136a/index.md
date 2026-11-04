@@ -2,11 +2,11 @@
 title: "小鼠脾脏CD8 T细胞提取"
 published: 2026-10-26
 description: "学习提取小鼠CD8 T细胞"
-category: "实验记录"
-tags: ["免疫学","CD8 T细胞","protocol"]
+category: "protocol"
+tags: ["免疫学","CD8 T细胞"]
 image: "/obsidian-published/90fd0856-805f-43f0-898f-61704670136a/originals/65eb49324af9a7e4d5d6fd83a885021683a0459dbb9ac21b225ebda4bca49d08.jpg"
 draft: false
-updated: 2026-10-27
+updated: 2026-11-05
 ---
 
 
