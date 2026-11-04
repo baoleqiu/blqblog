@@ -1,10 +1,10 @@
 {
   "id": "deab3454-ee2e-40f4-85cc-d41381c98365",
-  "operationId": "4c786501-9cd5-4472-955a-85b08b844b87",
+  "operationId": "e645b7d0-1b59-4e46-ad38-b447243d75b3",
   "action": "publish",
-  "contentFingerprint": "fe4461515f270430bb76fffe3df84c70a56d973fa09e19ca602384394e5fce85",
+  "contentFingerprint": "b9edde03ad9625dfe25e06f105c0c94915c77afd51644f4b22286207c036358d",
   "updated": "2026-11-04",
   "files": {
-    "src/content/posts/obsidian/deab3454-ee2e-40f4-85cc-d41381c98365/index.md": "6fedc1dd95f80650f498b8872d3ea7f8e70621b23e86fcc18d7493c82528a0bf"
+    "src/content/posts/obsidian/deab3454-ee2e-40f4-85cc-d41381c98365/index.md": "a4eadb14b88174e0ed71f385f9af8533b8bff701e8042b3130edaa1368b68cd3"
   }
 }

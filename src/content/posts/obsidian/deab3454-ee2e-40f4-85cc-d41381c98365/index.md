@@ -2,8 +2,8 @@
 title: "感受态细胞转化"
 published: 2026-11-03
 description: ""
-category: "实验记录"
-tags: ["感受态细胞","DH5α","1917"]
+category: "protocol"
+tags: ["感受态细胞","DH5α","1917","protocol"]
 image: ""
 draft: false
 updated: 2026-11-04
