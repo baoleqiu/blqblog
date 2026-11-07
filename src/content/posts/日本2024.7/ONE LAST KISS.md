@@ -12,7 +12,7 @@ category: 旅行
   src="https://blqblog.oss-cn-shanghai.aliyuncs.com/videos/ONE%20LAST%20KISS.mp4"
   controls
   playsinline
-  preload="metadata"
+  preload="none"
   aria-label="日本旅行总结视频">
   <a href="https://blqblog.oss-cn-shanghai.aliyuncs.com/videos/ONE%20LAST%20KISS.mp4" target="_blank" rel="noopener noreferrer">打开原视频</a>
 </video>
