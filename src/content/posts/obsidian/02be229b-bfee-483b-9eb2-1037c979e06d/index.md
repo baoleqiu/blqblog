@@ -2,7 +2,7 @@
 title: "本科室友会面"
 published: 2026-11-02
 description: "2026/10/31"
-category: "生活记录"
+category: "recording"
 tags: ["朋友","本科","大学","南京"]
 image: "/obsidian-published/02be229b-bfee-483b-9eb2-1037c979e06d/display/c4742e649e29c0b1cf1882f464ccae29ed699b27ad7de265b6af665e0716da37.webp"
 draft: false
