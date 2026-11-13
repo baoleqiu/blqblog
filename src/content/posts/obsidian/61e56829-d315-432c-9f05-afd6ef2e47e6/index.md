@@ -1,7 +1,6 @@
 ---
 title: "胶回收"
 published: 2026-11-13
-description: ""
 category: "protocol"
 tags: ["胶收"]
 image: "/obsidian-published/61e56829-d315-432c-9f05-afd6ef2e47e6/display/cd0c0ddd1d545e73e888b1686dc45e68ac37a5d7277784723c1a003058ddab44.webp"
