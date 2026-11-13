@@ -1,0 +1,12 @@
+{
+  "id": "61e56829-d315-432c-9f05-afd6ef2e47e6",
+  "operationId": "83cba220-d17d-4693-80e8-6e9a6c88cb83",
+  "action": "publish",
+  "contentFingerprint": "e131ab7b3cafcd7d015920061f201e0f8c68638b090a6153a002065f7af034b7",
+  "updated": null,
+  "files": {
+    "public/obsidian-published/61e56829-d315-432c-9f05-afd6ef2e47e6/originals/cd0c0ddd1d545e73e888b1686dc45e68ac37a5d7277784723c1a003058ddab44.jpg": "cd0c0ddd1d545e73e888b1686dc45e68ac37a5d7277784723c1a003058ddab44",
+    "public/obsidian-published/61e56829-d315-432c-9f05-afd6ef2e47e6/display/cd0c0ddd1d545e73e888b1686dc45e68ac37a5d7277784723c1a003058ddab44.webp": "7fcb41fd2609601584f895566e6c4bddbe41c10068a220d57b17b4e45213f2ac",
+    "src/content/posts/obsidian/61e56829-d315-432c-9f05-afd6ef2e47e6/index.md": "b13942d2bb87f6ade501aeaa9d78a0305c87030549d9214901757da75338b53b"
+  }
+}
