@@ -1,0 +1,15 @@
+---
+title: "2026年11月的第三个周日"
+published: 2026-11-18
+description: ""
+category: "recording"
+tags: ["对象","南京","周末","源麦甜","脆皮鸡"]
+image: "/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/c4158296c8951af7d9df6db96ac6db9473de8df76b224ac3b38e38d4174d15e8.jpg"
+draft: false
+---
+### 2026年11月的第三个周日
+和宝宝去了国创园，今天的天气很好。
+<span class="blq-image-layout" role="figure" data-align="center" style="width:80%"><a class="blq-lightbox no-styling" href="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/40088f0355ba1af4c94eb94e66a3bc3134db4f5fe4a55298e7bf5c619c80ca4c.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：图片"><img class="blq-image" src="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/40088f0355ba1af4c94eb94e66a3bc3134db4f5fe4a55298e7bf5c619c80ca4c.jpg" alt="" width="966" height="1444" loading="lazy" decoding="async"></a><span class="blq-image-caption">俯拍宝宝的穿搭</span></span>
+<span class="blq-image-layout" role="figure" data-align="center" style="width:80%"><a class="blq-lightbox no-styling" href="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/c4158296c8951af7d9df6db96ac6db9473de8df76b224ac3b38e38d4174d15e8.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：图片"><img class="blq-image" src="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/c4158296c8951af7d9df6db96ac6db9473de8df76b224ac3b38e38d4174d15e8.jpg" alt="" width="1616" height="1080" loading="lazy" decoding="async"></a><span class="blq-image-caption">这张我很喜欢</span></span>
+<span class="blq-image-layout" role="figure" data-align="center" style="width:80%"><a class="blq-lightbox no-styling" href="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/9324a780ae5ba24f93659486d1b4a1dc15ca1e18a99dfe4aa11c4c985a774717.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：图片"><img class="blq-image" src="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/9324a780ae5ba24f93659486d1b4a1dc15ca1e18a99dfe4aa11c4c985a774717.jpg" alt="" width="1280" height="1707" loading="lazy" decoding="async"></a><span class="blq-image-caption">宝宝请我吃的猪肚鸡煲，还有脆皮鸡，很好吃</span></span>
+<span class="blq-image-layout" role="figure" data-align="center" style="width:80%"><a class="blq-lightbox no-styling" href="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/83392210b27522fe849f5d97da3121858e8261666a93d27673396f1bfcee6ca0.jpg" data-no-swup data-fancybox="blq-images" data-type="image" aria-label="放大图片：图片"><img class="blq-image" src="/obsidian-published/43caae80-d8ed-4377-8228-a97eabbce1a9/originals/83392210b27522fe849f5d97da3121858e8261666a93d27673396f1bfcee6ca0.jpg" alt="" width="960" height="1280" loading="lazy" decoding="async"></a><span class="blq-image-caption">源麦甜的宝宝碗，全都吃光了</span></span>
