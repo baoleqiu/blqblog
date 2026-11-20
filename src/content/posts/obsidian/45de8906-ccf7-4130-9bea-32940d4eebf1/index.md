@@ -1,7 +1,7 @@
 ---
 title: "2026-11-18"
 published: 2026-11-19
-description: "-"
+description: "和宝宝去吃了必胜客，最近在看大理石谋杀案"
 category: "recording"
 tags: ["对象","南京","必胜客","大理石谋杀案","汉堡"]
 image: "/obsidian-published/45de8906-ccf7-4130-9bea-32940d4eebf1/display/e92b3166d97895825fa02cc73886e7812ffaff3c44c6ba2af613ccf8a74437e2.webp"
